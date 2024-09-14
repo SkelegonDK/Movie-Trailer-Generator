@@ -1,5 +1,7 @@
+import io
 import streamlit as st
 import random
+import requests
 
 
 def get_trailer_points():
@@ -148,12 +150,34 @@ def card(category, option, color):
 
 def generate_script_with_ollama(prompt):
     url = "http://localhost:11434/api/generate"
-    data = {"model": "mistral", "prompt": prompt, "stream": False}
+    data = {"model": "phi3.5:latest", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()["response"]
     else:
         st.error(f"Error generating script: {response.text}")
+        return None
+
+
+def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+    headers = {
+        "Accept": "audio/mpeg",
+        "Content-Type": "application/json",
+        "xi-api-key": st.secrets["ELEVENLABS_API_KEY"],
+    }
+    data = {
+        "text": text,
+        "model_id": "eleven_turbo_v2_5",
+        "voice_settings": {"stability": 0.5, "similarity_boost": 0.5},
+    }
+
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        return response.content
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error generating audio: {str(e)}")
         return None
 
 
@@ -185,35 +209,56 @@ def main():
         }
         st.rerun()
 
-    if st.button("Generate Trailer Script"):
-        prompt = f"""Create a movie trailer script for a film with the following elements:
-        Genre: {st.session_state.selected_points['Genre']}
-        Setting: {st.session_state.selected_points['Setting']}
-        Main Character: {st.session_state.selected_points['Main Character']}
-        Conflict: {st.session_state.selected_points['Conflict']}
-        Plot Twist: {st.session_state.selected_points['Plot Twist']}
+    if st.button("Generate Voice-Over Script"):
+        prompt = f"""Generate a dramatic movie trailer voice-over script based on these elements:
 
-        The script should be dramatic and engaging, following this structure:
-        1. A powerful opening line
-        2. Introduction of the setting and main character
-        3. Escalation of the conflict
-        4. Hint at the plot twist
-        5. Climactic moment
-        6. Closing tagline
+Genre: {st.session_state.selected_points['Genre']}
+Setting: {st.session_state.selected_points['Setting']}
+Main Character: {st.session_state.selected_points['Main Character']}
+Conflict: {st.session_state.selected_points['Conflict']}
+Plot Twist: {st.session_state.selected_points['Plot Twist']}
 
-        Keep the script between 100-150 words."""
+Guidelines:
+- Write ONLY the voice-over script, nothing else.
+- Use a dramatic, intense tone typical of movie trailers.
+- Include powerful, attention-grabbing phrases.
+- Allude to the plot twist without revealing it entirely.
+- Keep it between 50-75 words.
+- Do not include any audio cues, sound effects, or scene descriptions.
+- Focus solely on what the narrator would say in the trailer.
+- add impact to specific words or phrases using uppercase.
 
-        with st.spinner("Generating trailer script..."):
+Formatting instructions:
+- Use a new line to separate each sentence.
+- Add a new line after every period (.), exclamation mark (!), question mark (?), and comma (,).
+- Ensure there's a blank line between each formatted line for clarity.
+- Do not include notes or comments.
+- Do not include the title of the movie.
+"""
+
+        with st.spinner("Generating voice-over script..."):
             script = generate_script_with_ollama(prompt)
 
         if script:
-            st.session_state.generated_script = script
-            st.text_area("Generated Script", script, height=300)
+            formatted_script = "\n\n".join(
+                [line.strip() for line in script.split("\n") if line.strip()]
+            )
+            st.session_state.generated_script = formatted_script
+            st.text_area("Generated Voice-Over Script", formatted_script, height=300)
 
-            if st.button("Generate Audio (Not implemented yet)"):
-                st.warning(
-                    "Audio generation with ElevenLabs will be implemented in the next step."
-                )
+            if st.button("Generate Audio"):
+                with st.spinner("Generating audio..."):
+                    audio = generate_audio_with_elevenlabs(formatted_script)
+                if audio:
+                    st.audio(audio, format="audio/mp3")
+                    st.download_button(
+                        label="Download Audio",
+                        data=audio,
+                        file_name="movie_trailer_voiceover.mp3",
+                        mime="audio/mp3",
+                    )
+                else:
+                    st.error("Failed to generate audio. Please try again.")
         else:
             st.error("Failed to generate script. Please try again.")
 
