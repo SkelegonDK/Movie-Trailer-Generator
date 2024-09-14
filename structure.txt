@@ -1,0 +1,15 @@
+movie_trailer_generator/
+├── app/
+│   ├── main.py
+│   ├── config.py
+│   ├── models.py
+│   ├── llm_handler.py
+│   ├── tts_handler.py
+│   └── utils.py
+├── tests/
+│   └── test_app.py
+├── .streamlit/
+│   └── secrets.toml
+├── .gitignore
+├── README.md
+└── requirements.txt
