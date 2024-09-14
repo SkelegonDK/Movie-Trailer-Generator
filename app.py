@@ -1,7 +1,8 @@
-import io
+import os
 import streamlit as st
 import random
 import requests
+from datetime import datetime
 
 
 def get_trailer_points():
@@ -150,7 +151,7 @@ def card(category, option, color):
 
 def generate_script_with_ollama(prompt):
     url = "http://localhost:11434/api/generate"
-    data = {"model": "phi3.5:latest", "prompt": prompt, "stream": False}
+    data = {"model": "llama3.1:latest", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()["response"]
@@ -169,7 +170,7 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     data = {
         "text": text,
         "model_id": "eleven_turbo_v2_5",
-        "voice_settings": {"stability": 0.5, "similarity_boost": 0.5},
+        "voice_settings": {"stability": 0.7, "similarity_boost": 0.6},
     }
 
     try:
@@ -179,6 +180,23 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     except requests.exceptions.RequestException as e:
         st.error(f"Error generating audio: {str(e)}")
         return None
+
+
+def save_audio_file(audio_content):
+    # Create a 'generated_audio' folder if it doesn't exist
+    if not os.path.exists("generated_audio"):
+        os.makedirs("generated_audio")
+
+    # Generate a unique filename based on timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"movie_trailer_{timestamp}.mp3"
+    filepath = os.path.join("generated_audio", filename)
+
+    # Save the audio content
+    with open(filepath, "wb") as f:
+        f.write(audio_content)
+
+    return filepath
 
 
 def main():
@@ -231,7 +249,6 @@ Guidelines:
 Formatting instructions:
 - Use a new line to separate each sentence.
 - Add a new line after every period (.), exclamation mark (!), question mark (?), and comma (,).
-- Ensure there's a blank line between each formatted line for clarity.
 - Do not include notes or comments.
 - Do not include the title of the movie.
 """
@@ -244,23 +261,41 @@ Formatting instructions:
                 [line.strip() for line in script.split("\n") if line.strip()]
             )
             st.session_state.generated_script = formatted_script
-            st.text_area("Generated Voice-Over Script", formatted_script, height=300)
-
-            if st.button("Generate Audio"):
-                with st.spinner("Generating audio..."):
-                    audio = generate_audio_with_elevenlabs(formatted_script)
-                if audio:
-                    st.audio(audio, format="audio/mp3")
-                    st.download_button(
-                        label="Download Audio",
-                        data=audio,
-                        file_name="movie_trailer_voiceover.mp3",
-                        mime="audio/mp3",
-                    )
-                else:
-                    st.error("Failed to generate audio. Please try again.")
+            st.session_state.script_generated = True
         else:
             st.error("Failed to generate script. Please try again.")
+            st.session_state.script_generated = False
+
+    # Display the script if it exists
+    if st.session_state.get("script_generated", False):
+        st.text_area(
+            "Generated Voice-Over Script", st.session_state.generated_script, height=300
+        )
+
+        if st.button("Generate Audio"):
+            with st.spinner("Generating audio..."):
+                audio = generate_audio_with_elevenlabs(
+                    st.session_state.generated_script
+                )
+            if audio:
+                # Save the audio file
+                audio_file_path = save_audio_file(audio)
+
+                # Play the audio
+                st.audio(audio, format="audio/mp3")
+
+                # Provide download button
+                with open(audio_file_path, "rb") as file:
+                    st.download_button(
+                        label="Download Audio",
+                        data=file,
+                        file_name=os.path.basename(audio_file_path),
+                        mime="audio/mp3",
+                    )
+
+                st.success(f"Audio saved to {audio_file_path}")
+            else:
+                st.error("Failed to generate audio. Please try again.")
 
 
 if __name__ == "__main__":
