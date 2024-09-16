@@ -1,0 +1,448 @@
+[
+    {
+        "label": "runpy",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "runpy",
+        "description": "runpy",
+        "detail": "runpy",
+        "documentation": {}
+    },
+    {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "site",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "site",
+        "description": "site",
+        "detail": "site",
+        "documentation": {}
+    },
+    {
+        "label": "sys",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sys",
+        "description": "sys",
+        "detail": "sys",
+        "documentation": {}
+    },
+    {
+        "label": "json",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "json",
+        "description": "json",
+        "detail": "json",
+        "documentation": {}
+    },
+    {
+        "label": "requests",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "requests",
+        "description": "requests",
+        "detail": "requests",
+        "documentation": {}
+    },
+    {
+        "label": "streamlit",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "streamlit",
+        "description": "streamlit",
+        "detail": "streamlit",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "random",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "random",
+        "description": "random",
+        "detail": "random",
+        "documentation": {}
+    },
+    {
+        "label": "get_trailer_points",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_with_llama3",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "card",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_script_with_ollama",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_movie_name",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_image_prompts",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_audio_with_elevenlabs",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "save_audio_file",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "save_movie_data",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "bin_dir",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "bin_dir = os.path.dirname(abs_file)\nbase = bin_dir[: -len(\"bin\") - 1]  # strip away the bin part from the __file__, plus the path separator\n# prepend bin to PATH (this file is inside the bin directory)\nos.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"Stupid-Movie-Trailer-Generator\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "base",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "base = bin_dir[: -len(\"bin\") - 1]  # strip away the bin part from the __file__, plus the path separator\n# prepend bin to PATH (this file is inside the bin directory)\nos.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"Stupid-Movie-Trailer-Generator\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"PATH\"]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "os.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"Stupid-Movie-Trailer-Generator\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"VIRTUAL_ENV\"]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "os.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"Stupid-Movie-Trailer-Generator\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"VIRTUAL_ENV_PROMPT\"]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "os.environ[\"VIRTUAL_ENV_PROMPT\"] = \"Stupid-Movie-Trailer-Generator\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "prev_length",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "prev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.path[:]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.real_prefix",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "sys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.prefix",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "sys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "get_trailer_points",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def get_trailer_points():\n    category_order = [\"genre\", \"main_character\", \"setting\", \"conflict\", \"plot_twist\"]\n    trailer_points = []\n    data_dir = \"assets/data\"\n    for category in category_order:\n        filename = f\"{category}.json\"\n        with open(os.path.join(data_dir, filename), \"r\") as f:\n            trailer_points.append(json.load(f))\n    return trailer_points\ndef generate_with_llama3(prompt):",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_with_llama3",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.1:latest\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        return None  # Handle error appropriately\n@st.cache_data\ndef get_trailer_points():",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "get_trailer_points",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def get_trailer_points():\n    category_order = [\"genre\", \"main_character\", \"setting\", \"conflict\", \"plot_twist\"]\n    trailer_points = []\n    data_dir = \"assets/data\"\n    for category in category_order:\n        filename = f\"{category}.json\"\n        with open(os.path.join(data_dir, filename), \"r\") as f:\n            trailer_points.append(json.load(f))\n    return trailer_points\n@st.cache_data",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "card",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def card(category, option, color):\n    st.markdown(\n        f\"\"\"\n    <div style=\"\n        background-color: {color};\n        border-radius: 10px;\n        padding: 20px;\n        margin: 10px 0;\n        height: auto;\n        display: flex;",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_script_with_ollama",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def generate_script_with_ollama(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.1:latest\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating script: {response.text}\")\n        return None\ndef generate_audio_with_elevenlabs(text, voice_id=\"FF7KdobWPaiR0vkcALHF\"):",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_audio_with_elevenlabs",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def generate_audio_with_elevenlabs(text, voice_id=\"FF7KdobWPaiR0vkcALHF\"):\n    url = f\"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}\"\n    headers = {\n        \"Accept\": \"audio/mpeg\",\n        \"Content-Type\": \"application/json\",\n        \"xi-api-key\": st.secrets[\"ELEVENLABS_API_KEY\"],\n    }\n    data = {\n        \"text\": text,\n        \"model_id\": \"eleven_turbo_v2_5\",",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "save_audio_file",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def save_audio_file(audio_content, selected_points):\n    if not os.path.exists(\"generated_audio\"):\n        os.makedirs(\"generated_audio\")\n    timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n    elements = \"_\".join([point.replace(\" \", \"-\") for point in selected_points.values()])\n    filename = f\"movie_trailer_{elements}_{timestamp}.mp3\"\n    filename = \"\".join(\n        char for char in filename if char.isalnum() or char in [\"_\", \"-\", \".\"]\n    )[:255]\n    filepath = os.path.join(\"generated_audio\", filename)",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_with_llama3",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.1:latest\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating content: {response.text}\")\n        return None\ndef generate_movie_name(script):",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_movie_name",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def generate_movie_name(script):\n    prompt = f\"\"\"Based on the following movie trailer script, generate a catchy and appropriate movie title in JSON format:\nScript:\n{script}\nExample output:\n{{\n    \"movie_name\": \"The Last Samurai\"\n}}\nGuidelines:\n- The title should be short and memorable (1-5 words)",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_image_prompts",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def generate_image_prompts(script, selected_points):\n    prompt = f\"\"\"Based on the following movie trailer script and elements, create 5 detailed image prompts for key scenes in the movie in JSON format:\nScript:\n{script}\nElements:\nGenre: {selected_points['Genre']}\nSetting: {selected_points['Setting']}\nMain Character: {selected_points['Main Character']}\nConflict: {selected_points['Conflict']}\nPlot Twist: {selected_points['Plot Twist']}",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "save_movie_data",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def save_movie_data(movie_name, image_prompts, script, output_dir=\"assets/data\"):\n    # Ensure the output directory exists\n    os.makedirs(output_dir, exist_ok=True)\n    # Create the data structure\n    movie_data = {\n        \"movie_name\": movie_name,\n        \"image_prompts\": image_prompts,\n        \"script\": script,\n    }\n    # Save movie data",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "bin_dir",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "bin_dir = os.path.dirname(abs_file)\nbase = bin_dir[: -len(\"bin\") - 1]  # strip away the bin part from the __file__, plus the path separator\n# prepend bin to PATH (this file is inside the bin directory)\nos.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "base",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "base = bin_dir[: -len(\"bin\") - 1]  # strip away the bin part from the __file__, plus the path separator\n# prepend bin to PATH (this file is inside the bin directory)\nos.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"PATH\"]",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "os.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"VIRTUAL_ENV\"]",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "os.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = \"\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"VIRTUAL_ENV_PROMPT\"]",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "os.environ[\"VIRTUAL_ENV_PROMPT\"] = \"\" or os.path.basename(base)  # noqa: SIM222\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "prev_length",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "prev_length = len(sys.path)\nfor lib in \"../lib/python3.12/site-packages\".split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.path[:]",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.real_prefix",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "sys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.prefix",
+        "kind": 5,
+        "importPath": "stupid_movie_generator.bin.activate_this",
+        "description": "stupid_movie_generator.bin.activate_this",
+        "peekOfCode": "sys.prefix = base",
+        "detail": "stupid_movie_generator.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def main():\n    st.set_page_config(page_title=\"Movie Trailer Generator\", layout=\"wide\")\n    st.title(\"Movie Trailer Generator\")\n    trailer_points = get_trailer_points()\n    colors = [\"#FFB3BA\", \"#BAFFC9\", \"#BAE1FF\", \"#FFFFBA\", \"#FFDFBA\"]\n    if \"selected_points\" not in st.session_state:\n        st.session_state.selected_points = {\n            point[\"category\"]: random.choice(point[\"options\"])\n            for point in trailer_points\n        }",
+        "detail": "app",
+        "documentation": {}
+    }
+]
