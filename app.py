@@ -69,28 +69,31 @@ def main():
     # Main content column
     with main_col:
         if st.button("Generate Voice-Over Script"):
-            prompt = f"""Generate a dramatic movie trailer voice-over script based on these elements:
+            prompt = f"""[SYSTEM]
+                You are a professional voice-over artist reading a movie trailer script. Output ONLY the exact words to be spoken, with no additional context, descriptions, or formatting.
 
+                [USER]
+                Create a movie trailer voice-over script using these elements:
                 Genre: {st.session_state.selected_points['Genre']}
                 Setting: {st.session_state.selected_points['Setting']}
                 Main Character: {st.session_state.selected_points['Main Character']}
                 Conflict: {st.session_state.selected_points['Conflict']}
                 Plot Twist: {st.session_state.selected_points['Plot Twist']}
 
-                Guidelines:
-                - Write ONLY the voice-over script, nothing else.
-                - Use a dramatic, intense tone typical of movie trailers.
-                - Include powerful, attention-grabbing phrases.
-                - Allude to the plot twist without revealing it entirely.
-                - Keep it between 50-75 words.
-                - Do not include any audio cues, sound effects, or scene descriptions.
-                - Focus solely on what the narrator would say in the trailer.
-                - add impact to specific words or phrases using uppercase.
+                Rules:
+                1. Output raw text only - no annotations, markers, or descriptions
+                2. No scene descriptions or camera directions
+                3. No sound effect descriptions
+                4. No emotional cues or tone indicators
+                5. No location markers
+                6. No character names in parentheses
+                7. No timestamps or transition markers
 
-                Formatting instructions:
-
-                - Do not include notes or comments.
-                - Do not include the title of the movie.
+                Format:
+                - Pure spoken text
+                - UPPERCASE for emphasis
+                - 50-75 words
+                - Line breaks only between distinct phrases
                 """
 
             with st.spinner("Generating voice-over script..."):

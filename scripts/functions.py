@@ -21,7 +21,7 @@ def get_trailer_points():
 
 def generate_with_llama3(prompt):
     url = "http://localhost:11434/api/generate"
-    data = {"model": "llama3.1:latest", "prompt": prompt, "stream": False}
+    data = {"model": "llama3.2:3b", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()["response"]
@@ -68,7 +68,7 @@ def card(category, option, color):
 
 def generate_script_with_ollama(prompt):
     url = "http://localhost:11434/api/generate"
-    data = {"model": "llama3.1:latest", "prompt": prompt, "stream": False}
+    data = {"model": "llama3.2:3b", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()["response"]
@@ -119,7 +119,7 @@ def save_audio_file(audio_content, selected_points):
 
 def generate_with_llama3(prompt):
     url = "http://localhost:11434/api/generate"
-    data = {"model": "llama3.1:latest", "prompt": prompt, "stream": False}
+    data = {"model": "llama3.2:3b", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()["response"]

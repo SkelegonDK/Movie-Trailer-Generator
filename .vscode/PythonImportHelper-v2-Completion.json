@@ -270,7 +270,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.1:latest\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        return None  # Handle error appropriately\n@st.cache_data\ndef get_trailer_points():",
+        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        return None  # Handle error appropriately\n@st.cache_data\ndef get_trailer_points():",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -297,7 +297,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_script_with_ollama(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.1:latest\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating script: {response.text}\")\n        return None\ndef generate_audio_with_elevenlabs(text, voice_id=\"FF7KdobWPaiR0vkcALHF\"):",
+        "peekOfCode": "def generate_script_with_ollama(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating script: {response.text}\")\n        return None\ndef generate_audio_with_elevenlabs(text, voice_id=\"FF7KdobWPaiR0vkcALHF\"):",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -324,7 +324,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.1:latest\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating content: {response.text}\")\n        return None\ndef generate_movie_name(script):",
+        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating content: {response.text}\")\n        return None\ndef generate_movie_name(script):",
         "detail": "scripts.functions",
         "documentation": {}
     },
