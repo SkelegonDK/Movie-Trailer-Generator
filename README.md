@@ -17,10 +17,17 @@ Before you begin, you'll need to have Python installed on your computer. You can
     Alternatively, you can install the required libraries individually:
 
     ```bash
-    pip install streamlit requests
+    pip install streamlit requests pydub
     ```
 
-2. **Install Ollama and the required model:**
+2. **Audio Processing Requirements:**
+
+    This project uses pydub for audio processing. You'll need to have the following:
+
+    * Background music file: Place your trailer music in `assets/audio/trailer_music.mp3`
+    * The background music will be automatically stretched to match the voice-over length and mixed at a lower volume
+
+3. **Install Ollama and the required model:**
 
     This project uses Ollama to generate the movie trailer script. Here's how to install it:
 
