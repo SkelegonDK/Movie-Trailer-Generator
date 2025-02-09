@@ -5,6 +5,14 @@ from datetime import datetime
 import requests
 import streamlit as st
 import subprocess
+from typing import Any
+
+try:
+    from pydub import AudioSegment
+    from pydub.effects import speedup
+except ImportError:
+    AudioSegment = Any  # type: ignore
+    speedup = Any  # type: ignore
 
 
 def get_trailer_points():
@@ -26,33 +34,6 @@ def get_trailer_points():
             trailer_points.append(json.load(f))
 
     return trailer_points
-
-
-# def generate_with_llama3(prompt):
-#     """
-#     Generates content using the Llama3 model via a local Ollama instance.
-
-#     Args:
-#         prompt (str): The prompt to send to the Llama3 model.
-
-#     Returns:
-#         str: The generated content from the Llama3 model, or None if an error occurs.
-#     """
-#     url = "http://localhost:11434/api/generate"
-#     data = {
-#         "model": st.session_state.get("selected_model", "llama3.2:3b"),
-#         "prompt": prompt,
-#         "stream": False,
-#     }
-#     try:
-#         response = requests.post(url, json=data, timeout=60)
-#         if response.status_code == 200:
-#             return response.json()["response"]
-#         else:
-#             return None
-#     except requests.exceptions.RequestException as e:
-#         st.error(f"Error generating content: {str(e)}")
-#         return None
 
 
 @st.cache_data
@@ -88,10 +69,10 @@ def card(category, option, color):
 
 def generate_script_with_ollama(prompt):
     """
-    Generates a movie trailer script using the Llama3 model via a local Ollama instance.
+    Generates a movie trailer script using the selected Llama model via a local Ollama instance.
 
     Args:
-        prompt (str): The prompt to send to the Llama3 model.
+        prompt (str): The prompt to send to the Llama model.
 
     Returns:
         str: The generated movie trailer script from the Llama3 model, or None if an error occurs.
@@ -137,32 +118,24 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
 
 
 def save_audio_file(audio_content, selected_points, movie_name):
-    """
-    Saves the generated audio content to a file in the generated_audio directory.
+    """Save voice-over audio with descriptive filename.
 
     Args:
-        audio_content (bytes): The audio content to save.
-        selected_points (dict): A dictionary of selected trailer elements.
-        movie_name (str): The name of the movie.
+        audio_content (bytes): The audio content to save
+        selected_points (dict): Dictionary of selected trailer elements
+        movie_name (str): Name of the movie
 
     Returns:
-        str: The filepath of the saved audio file.
+        str: Path to saved audio file
     """
-    if not os.path.exists("generated_audio"):
-        os.makedirs("generated_audio")
+    os.makedirs("generated_audio", exist_ok=True)
 
-    unique_id = uuid.uuid4()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    elements = "_".join([point.replace(" ", "-") for point in selected_points.values()])
-    filename = f"{movie_name}_{elements}_{unique_id}_{timestamp}.mp3"
-    filename = "".join(
-        char for char in filename if char.isalnum() or char in ["_", "-", "."]
-    )[:255]
+    filename = f"voiceover_{movie_name}_{timestamp}.mp3"
     filepath = os.path.join("generated_audio", filename)
 
     with open(filepath, "wb") as f:
         f.write(audio_content)
-
     return filepath
 
 
@@ -262,6 +235,46 @@ def get_ollama_models():
     except subprocess.CalledProcessError as e:
         st.error(f"Error listing Ollama models: {e}")
         return []
+
+
+def apply_background_music(audio_filepath):
+    """Mix voice-over with background music, stretching music to match voice-over length.
+
+    Args:
+        audio_filepath (str): Path to voice-over audio file
+
+    Returns:
+        str: Path to mixed audio file
+    """
+    try:
+        voice_over = AudioSegment.from_mp3(audio_filepath)
+        background = AudioSegment.from_mp3("assets/audio/trailer_music.mp3")
+
+        # Stretch background music to match voice-over length
+        ratio = len(voice_over) / len(background)
+        if ratio > 1:
+            # If voice-over is longer, slow down the background music
+            stretched = background._spawn(
+                background.raw_data,
+                overrides={"frame_rate": int(background.frame_rate * ratio)},
+            ).set_frame_rate(background.frame_rate)
+        else:
+            # If voice-over is shorter, speed up the background music
+            stretched = speedup(background, playback_speed=1 / ratio)
+
+        # Lower the volume of background music to not overpower voice-over
+        background_volume = (
+            -5
+        )  # Adjust this value to control background music volume (in dB)
+        stretched = stretched + background_volume
+
+        # Mix audio and save
+        output_path = audio_filepath.replace("voiceover_", "final_")
+        voice_over.overlay(stretched, position=0).export(output_path, format="mp3")
+        return output_path
+    except Exception as e:
+        st.error(f"Error applying background music: {str(e)}")
+        return None
 
 
 # Add other utility functions as needed

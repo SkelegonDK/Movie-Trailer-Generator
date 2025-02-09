@@ -2,16 +2,7 @@ import os
 import random
 
 import streamlit as st
-
-from scripts.functions import (
-    card,
-    generate_audio_with_elevenlabs,
-    generate_movie_name_with_id,
-    generate_script_with_ollama,
-    get_trailer_points,
-    save_audio_file,
-    get_ollama_models,
-)
+from scripts import functions
 
 
 def main():
@@ -20,7 +11,7 @@ def main():
 
     # Sidebar for Ollama model selection
     st.sidebar.header("Ollama Model Selection")
-    ollama_models = get_ollama_models()
+    ollama_models = functions.get_ollama_models()
     if not ollama_models:
         st.sidebar.error(
             "No Ollama models found. Please install Ollama and pull a model."
@@ -43,7 +34,7 @@ def main():
         st.session_state.selected_model = selected_model
     st.write("by Manuel Thomsen")
 
-    trailer_points = get_trailer_points()
+    trailer_points = functions.get_trailer_points()
     colors = ["#FFB3BA", "#BAFFC9", "#BAE1FF", "#FFFFBA", "#FFDFBA"]
 
     if "selected_points" not in st.session_state:
@@ -83,11 +74,11 @@ def main():
                     key=f"custom_{category}",
                 )
                 st.session_state.selected_points[category] = custom_element
-                card(category, custom_element, color)
+                functions.card(category, custom_element, color)
             else:
                 # Random mode: use random elements
                 option = st.session_state.selected_points[category]
-                card(category, option, color)
+                functions.card(category, option, color)
                 if st.button(
                     f"🎲 Randomize {category}",
                     key=f"randomize_{category}",
@@ -110,7 +101,7 @@ def main():
     with main_col:
         if st.button("Generate Voice-Over Script"):
             with st.spinner("Generating movie name..."):
-                movie_name_response = generate_movie_name_with_id(
+                movie_name_response = functions.generate_movie_name_with_id(
                     st.session_state.selected_points["Genre"],
                     st.session_state.selected_points["Main Character"],
                     st.session_state.selected_points["Setting"],
@@ -146,13 +137,13 @@ def main():
                 Output format:
                 - Pure spoken text.
                 - use only UPPERCASE for emphasis on specific words. Example: "it's NOW or NEVER".
-                - between 100 and 200 words.
+                - between 100 and 150 words.
                 - Line breaks only between distinct sentences.
                 - comma for short pauses, periods for longer pauses and dashes for dramatic pauses. example: "I'm going to the store - I'll be back in 30 minutes"
                 """
 
             with st.spinner("Generating voice-over script..."):
-                script = generate_script_with_ollama(prompt)
+                script = functions.generate_script_with_ollama(prompt)
 
             if script:
                 formatted_script = "\n\n".join(
@@ -175,39 +166,37 @@ def main():
 
             if st.button("Generate Voice over"):
                 with st.spinner("Generating audio..."):
-                    audio = generate_audio_with_elevenlabs(
+                    audio = functions.generate_audio_with_elevenlabs(
                         st.session_state.generated_script
                     )
                 if audio:
                     # Save the audio file
-                    audio_file_path = save_audio_file(
+                    audio_file_path = functions.save_audio_file(
                         audio,
                         st.session_state.selected_points,
                         st.session_state.movie_name,
                     )
 
-                    # Play the audio
-                    st.audio(audio, format="audio/mp3")
-
-                    # Provide download button
-                    with open(audio_file_path, "rb") as file:
-                        st.download_button(
-                            label="Download",
-                            data=file,
-                            file_name=os.path.basename(audio_file_path),
-                            mime="audio/mp3",
-                        )
-
-                    st.success(f"Audio saved to {audio_file_path}")
+                    # Apply background music
+                    audio_with_music_path = functions.apply_background_music(
+                        audio_file_path
+                    )
+                    if audio_with_music_path:
+                        st.audio(audio_with_music_path, format="audio/mp3")
+                        with open(audio_with_music_path, "rb") as file:
+                            st.download_button(
+                                label="Download",
+                                data=file,
+                                file_name=os.path.basename(audio_with_music_path),
+                                mime="audio/mp3",
+                            )
+                    else:
+                        st.error("Failed to apply background music. Please try again.")
                 else:
                     st.error("Failed to generate audio. Please try again.")
 
         st.subheader("Generated Audio Files")
         audio_files = [f for f in os.listdir("generated_audio") if f.endswith(".mp3")]
-        audio_files.sort(
-            key=lambda x: os.path.getmtime(os.path.join("generated_audio", x)),
-            reverse=True,
-        )
 
         if audio_files:
             audio_file = audio_files[0]
