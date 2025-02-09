@@ -161,3 +161,4 @@ cython_debug/
 /.streamlit
 *.mp3
 .vscode/PythonImportHelper-v2-Completion.json
+/.vscode
