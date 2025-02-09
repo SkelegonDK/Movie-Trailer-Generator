@@ -52,6 +52,15 @@
         "documentation": {}
     },
     {
+        "label": "streamlit",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "streamlit",
+        "description": "streamlit",
+        "detail": "streamlit",
+        "documentation": {}
+    },
+    {
         "label": "json",
         "kind": 6,
         "isExtraImport": true,
@@ -67,15 +76,6 @@
         "importPath": "requests",
         "description": "requests",
         "detail": "requests",
-        "documentation": {}
-    },
-    {
-        "label": "streamlit",
-        "kind": 6,
-        "isExtraImport": true,
-        "importPath": "streamlit",
-        "description": "streamlit",
-        "detail": "streamlit",
         "documentation": {}
     },
     {
@@ -250,6 +250,33 @@
         "documentation": {}
     },
     {
+        "label": "create_secrets_file",
+        "kind": 2,
+        "importPath": "pages.api_keys",
+        "description": "pages.api_keys",
+        "peekOfCode": "def create_secrets_file():\n    secrets_path = os.path.join(\".streamlit\", \"secrets.toml\")\n    if not os.path.exists(\".streamlit\"):\n        os.makedirs(\".streamlit\")\n    if not os.path.exists(secrets_path):\n        with open(secrets_path, \"w\") as f:\n            f.write(\n                \"# This is where you store your API keys. DO NOT share this file!\\n\"\n            )\n        st.success(",
+        "detail": "pages.api_keys",
+        "documentation": {}
+    },
+    {
+        "label": "elevenlabs_api_key",
+        "kind": 5,
+        "importPath": "pages.api_keys",
+        "description": "pages.api_keys",
+        "peekOfCode": "elevenlabs_api_key = st.text_input(\n    \"Enter your ElevenLabs API key\",\n    type=\"password\",\n    value=st.secrets.get(\"ELEVENLABS_API_KEY\", \"\"),\n)\nif elevenlabs_api_key:\n    st.session_state.elevenlabs_api_key = elevenlabs_api_key\n    # Save the API key to secrets.toml\n    secrets_path = os.path.join(\".streamlit\", \"secrets.toml\")\n    with open(secrets_path, \"w\") as f:",
+        "detail": "pages.api_keys",
+        "documentation": {}
+    },
+    {
+        "label": "audio_files",
+        "kind": 5,
+        "importPath": "pages.audio_browser",
+        "description": "pages.audio_browser",
+        "peekOfCode": "audio_files = [f for f in os.listdir(\"generated_audio\") if f.endswith(\".mp3\")]\naudio_files.sort(\n    key=lambda x: os.path.getmtime(os.path.join(\"generated_audio\", x)),\n    reverse=True,\n)\nif audio_files:\n    for audio_file in audio_files:\n        audio_path = os.path.join(\"generated_audio\", audio_file)\n        st.markdown(f\"**{audio_file}**\")\n        st.audio(audio_path, format=\"audio/mp3\")",
+        "detail": "pages.audio_browser",
+        "documentation": {}
+    },
+    {
         "label": "get_trailer_points",
         "kind": 2,
         "importPath": "scripts.functions",
@@ -290,7 +317,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_audio_with_elevenlabs(text, voice_id=\"FF7KdobWPaiR0vkcALHF\"):\n    url = f\"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}\"\n    headers = {\n        \"Accept\": \"audio/mpeg\",\n        \"Content-Type\": \"application/json\",\n        \"xi-api-key\": st.secrets[\"ELEVENLABS_API_KEY\"],\n    }\n    data = {\n        \"text\": text,\n        \"model_id\": \"eleven_turbo_v2_5\",",
+        "peekOfCode": "def generate_audio_with_elevenlabs(text, voice_id=\"FF7KdobWPaiR0vkcALHF\"):\n    url = f\"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}\"\n    headers = {\n        \"Accept\": \"audio/mpeg\",\n        \"Content-Type\": \"application/json\",\n        \"xi-api-key\": st.secrets.get(\"ELEVENLABS_API_KEY\"),\n    }\n    data = {\n        \"text\": text,\n        \"model_id\": \"eleven_turbo_v2_5\",",
         "detail": "scripts.functions",
         "documentation": {}
     },

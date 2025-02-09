@@ -67,7 +67,7 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     headers = {
         "Accept": "audio/mpeg",
         "Content-Type": "application/json",
-        "xi-api-key": st.secrets["ELEVENLABS_API_KEY"],
+        "xi-api-key": st.secrets.get("ELEVENLABS_API_KEY"),
     }
     data = {
         "text": text,

@@ -85,6 +85,18 @@ def main():
     # Main content column
     with main_col:
         if st.button("Generate Voice-Over Script"):
+            with st.spinner("Generating movie name..."):
+                movie_name_response = generate_movie_name_with_id(
+                    st.session_state.generated_script
+                )
+                if movie_name_response:
+                    st.session_state.movie_name = movie_name_response.get(
+                        "movie_name", ""
+                    )  # Save in session state
+                    st.success(f"Generated Movie Name: {st.session_state.movie_name}")
+                else:
+                    st.error("Failed to generate movie name. Please try again.")
+
             prompt = f"""[SYSTEM]
                 You are a professional voice-over artist reading a movie trailer script. Output ONLY the exact words to be spoken, with no additional context, descriptions, or formatting.
 
@@ -127,6 +139,7 @@ def main():
 
         # Display the script if it exists
         if st.session_state.get("script_generated", False):
+            st.subheader(st.session_state.movie_name)
             st.text_area(
                 "Generated Voice-Over Script",
                 st.session_state.generated_script,
@@ -160,55 +173,28 @@ def main():
                 else:
                     st.error("Failed to generate audio. Please try again.")
 
-        st.markdown("### Storyboard")
-        col1, col2, empty_col = st.columns([1, 1, 2])
-        with col1:
-            if st.button("Generate Movie Name"):
-                with st.spinner("Generating movie name..."):
-                    movie_name_response = generate_movie_name_with_id(
-                        st.session_state.generated_script
-                    )
-                if movie_name_response:
-                    st.session_state.movie_name = movie_name_response.get(
-                        "movie_name", ""
-                    )  # Save in session state
-                    st.success(f"Generated Movie Name: {st.session_state.movie_name}")
+        st.subheader("Generated Audio Files")
+        audio_files = [f for f in os.listdir("generated_audio") if f.endswith(".mp3")]
+        audio_files.sort(
+            key=lambda x: os.path.getmtime(os.path.join("generated_audio", x)),
+            reverse=True,
+        )
 
-                    # Save movie data to JSON
-                    save_movie_data(
-                        st.session_state.movie_name,
-                        st.session_state.generated_script,
-                    )  # Pass the script
-                else:
-                    st.error("Failed to generate movie name. Please try again.")
+        if audio_files:
+            audio_file = audio_files[0]
+            audio_path = os.path.join("generated_audio", audio_file)
+            st.markdown(f"**{audio_file}**")
+            st.audio(audio_path, format="audio/mp3")
 
-            with col2:
-                pass
-            with empty_col:
-                st.markdown(st.session_state.movie_name)
-
-        with st.expander("Generated Audio Files"):
-            st.subheader("Generated Audio Files")
-            audio_files = [
-                f for f in os.listdir("generated_audio") if f.endswith(".mp3")
-            ]
-            audio_files.sort(
-                key=lambda x: os.path.getmtime(os.path.join("generated_audio", x)),
-                reverse=True,
-            )
-
-            for audio_file in audio_files:
-                audio_path = os.path.join("generated_audio", audio_file)
-                st.markdown(f"**{audio_file}**")
-                st.audio(audio_path, format="audio/mp3")
-
-                with open(audio_path, "rb") as file:
-                    st.download_button(
-                        label="Download",
-                        data=file,
-                        file_name=audio_file,
-                        mime="audio/mp3",
-                    )
+            with open(audio_path, "rb") as file:
+                st.download_button(
+                    label="Download",
+                    data=file,
+                    file_name=audio_file,
+                    mime="audio/mp3",
+                )
+        else:
+            st.write("No audio files generated yet.")
 
 
 if __name__ == "__main__":
