@@ -6,7 +6,7 @@ Create hilarious movie trailers with randomly generated elements! This applicati
 
 Before you begin, you'll need to have Python installed on your computer. You can download it from [https://www.python.org/downloads/](https://www.python.org/downloads/).
 
-1.  **Install Dependencies:**
+1. **Install Dependencies:**
 
     This project requires a few Python libraries. You can install them using the following command in your terminal (Mac) or Command Prompt (Windows):
 
@@ -20,12 +20,12 @@ Before you begin, you'll need to have Python installed on your computer. You can
     pip install streamlit requests
     ```
 
-2.  **Install Ollama and the required model:**
+2. **Install Ollama and the required model:**
 
     This project uses Ollama to generate the movie trailer script. Here's how to install it:
 
-    *   Go to the [Ollama website](https://ollama.com/) and follow the installation instructions for your operating system.
-    *   Once Ollama is installed, open your terminal (Mac) or Command Prompt (Windows) and run the following command to download the required model:
+    * Go to the [Ollama website](https://ollama.com/) and follow the installation instructions for your operating system.
+    * Once Ollama is installed, open your terminal (Mac) or Command Prompt (Windows) and run the following command to download the required model:
 
         ```bash
         ollama pull llama3.2:3b
@@ -37,9 +37,9 @@ Before you begin, you'll need to have Python installed on your computer. You can
 
 To generate voiceovers, you'll need an API key from ElevenLabs. Here's how to get one:
 
-1.  Go to the [ElevenLabs website](https://elevenlabs.io/) and create an account.
-2.  Once you're logged in, go to your profile settings.
-3.  You'll find your API key on the profile page.
+1. Go to the [ElevenLabs website](https://elevenlabs.io/) and create an account.
+2. Once you're logged in, go to your profile settings.
+3. You'll find your API key on the profile page.
 
 ## API Key Management
 
@@ -57,7 +57,7 @@ Replace `"YOUR_API_KEY"` with your actual ElevenLabs API key.
 
 ## Usage
 
-1.  **Run the Streamlit app:**
+1. **Run the Streamlit app:**
 
     Open your terminal (Mac) or Command Prompt (Windows) and navigate to the project directory. Then, run the following command:
 
