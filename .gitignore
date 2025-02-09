@@ -162,3 +162,4 @@ cython_debug/
 *.mp3
 .vscode/PythonImportHelper-v2-Completion.json
 /.vscode
+.vscode/PythonImportHelper-v2-Completion.json
