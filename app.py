@@ -10,12 +10,38 @@ from scripts.functions import (
     generate_script_with_ollama,
     get_trailer_points,
     save_audio_file,
+    get_ollama_models,
 )
 
 
 def main():
     st.set_page_config(page_title="Movie Trailer Generator", layout="wide")
     st.title("Movie Trailer Generator")
+
+    # Sidebar for Ollama model selection
+    st.sidebar.header("Ollama Model Selection")
+    ollama_models = get_ollama_models()
+    if not ollama_models:
+        st.sidebar.error(
+            "No Ollama models found. Please install Ollama and pull a model."
+        )
+        st.sidebar.markdown("[Ollama Installation Instructions](https://ollama.com/)")
+        st.stop()
+    else:
+        default_model = (
+            "llama3.2:3b" if "llama3.2:3b" in ollama_models else ollama_models[0]
+        )
+        selected_model = st.sidebar.selectbox(
+            "Select Ollama Model",
+            ollama_models,
+            index=(
+                ollama_models.index(default_model)
+                if default_model in ollama_models
+                else 0
+            ),
+        )
+        st.session_state.selected_model = selected_model
+    st.write("by Manuel Thomsen")
 
     trailer_points = get_trailer_points()
     colors = ["#FFB3BA", "#BAFFC9", "#BAE1FF", "#FFFFBA", "#FFDFBA"]
@@ -117,11 +143,12 @@ def main():
                 6. No character names in parentheses
                 7. No timestamps or transition markers
 
-                Format:
-                - Pure spoken text
-                - UPPERCASE for emphasis
-                - 100 - 200 words
-                - Line breaks only between distinct phrases
+                Output format:
+                - Pure spoken text.
+                - use only UPPERCASE for emphasis on specific words. Example: "it's NOW or NEVER".
+                - between 100 and 200 words.
+                - Line breaks only between distinct sentences.
+                - comma for short pauses, periods for longer pauses and dashes for dramatic pauses. example: "I'm going to the store - I'll be back in 30 minutes"
                 """
 
             with st.spinner("Generating voice-over script..."):

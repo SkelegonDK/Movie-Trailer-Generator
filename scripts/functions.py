@@ -1,9 +1,10 @@
 import os
 import json
+import uuid
+from datetime import datetime
 import requests
 import streamlit as st
-from datetime import datetime
-import uuid
+import subprocess
 
 
 def get_trailer_points():
@@ -27,23 +28,31 @@ def get_trailer_points():
     return trailer_points
 
 
-def generate_with_llama3(prompt):
-    """
-    Generates content using the Llama3 model via a local Ollama instance.
+# def generate_with_llama3(prompt):
+#     """
+#     Generates content using the Llama3 model via a local Ollama instance.
 
-    Args:
-        prompt (str): The prompt to send to the Llama3 model.
+#     Args:
+#         prompt (str): The prompt to send to the Llama3 model.
 
-    Returns:
-        str: The generated content from the Llama3 model, or None if an error occurs.
-    """
-    url = "http://localhost:11434/api/generate"
-    data = {"model": "llama3.2:3b", "prompt": prompt, "stream": False}
-    response = requests.post(url, json=data)
-    if response.status_code == 200:
-        return response.json()["response"]
-    else:
-        return None
+#     Returns:
+#         str: The generated content from the Llama3 model, or None if an error occurs.
+#     """
+#     url = "http://localhost:11434/api/generate"
+#     data = {
+#         "model": st.session_state.get("selected_model", "llama3.2:3b"),
+#         "prompt": prompt,
+#         "stream": False,
+#     }
+#     try:
+#         response = requests.post(url, json=data, timeout=60)
+#         if response.status_code == 200:
+#             return response.json()["response"]
+#         else:
+#             return None
+#     except requests.exceptions.RequestException as e:
+#         st.error(f"Error generating content: {str(e)}")
+#         return None
 
 
 @st.cache_data
@@ -88,12 +97,20 @@ def generate_script_with_ollama(prompt):
         str: The generated movie trailer script from the Llama3 model, or None if an error occurs.
     """
     url = "http://localhost:11434/api/generate"
-    data = {"model": "llama3.2:3b", "prompt": prompt, "stream": False}
-    response = requests.post(url, json=data)
-    if response.status_code == 200:
-        return response.json()["response"]
-    else:
-        st.error(f"Error generating script: {response.text}")
+    data = {
+        "model": st.session_state.get("selected_model", "llama3.2:3b"),
+        "prompt": prompt,
+        "stream": False,
+    }
+    try:
+        response = requests.post(url, json=data, timeout=60)
+        if response.status_code == 200:
+            return response.json()["response"]
+        else:
+            st.error(f"Error generating script: {response.text}")
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error generating script: {str(e)}")
         return None
 
 
@@ -111,7 +128,7 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     }
 
     try:
-        response = requests.post(url, json=data, headers=headers)
+        response = requests.post(url, json=data, headers=headers, timeout=60)
         response.raise_for_status()
         return response.content
     except requests.exceptions.RequestException as e:
@@ -213,11 +230,38 @@ Guidelines:
 
 Output:"""
 
-    response = generate_with_llama3(prompt)
+    response = generate_script_with_ollama(prompt)
     print("LLM Response:", response)  # Debugging line
     if response:
         return json.loads(response)  # Parse the JSON response
     return None
+
+
+def get_ollama_models():
+    """
+    Lists the Ollama models installed on the system.
+
+    Returns:
+        list: A list of strings, where each string is the name of an installed Ollama model.
+              Returns an empty list if Ollama is not installed or no models are found.
+    """
+    try:
+        result = subprocess.run(
+            ["ollama", "list"], capture_output=True, text=True, check=True
+        )
+        models = []
+        for line in result.stdout.splitlines():
+            if line.strip():
+                parts = line.split()
+                if len(parts) > 0:
+                    models.append(parts[0].strip())
+        return models
+    except FileNotFoundError:
+        st.error("Ollama is not installed. Please install Ollama and try again.")
+        return []
+    except subprocess.CalledProcessError as e:
+        st.error(f"Error listing Ollama models: {e}")
+        return []
 
 
 # Add other utility functions as needed
