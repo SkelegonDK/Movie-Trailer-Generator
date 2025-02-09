@@ -3,6 +3,7 @@ import json
 import requests
 import streamlit as st
 from datetime import datetime
+import uuid
 
 
 def get_trailer_points():
@@ -118,13 +119,14 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
         return None
 
 
-def save_audio_file(audio_content, selected_points):
+def save_audio_file(audio_content, selected_points, movie_name):
     """
     Saves the generated audio content to a file in the generated_audio directory.
 
     Args:
         audio_content (bytes): The audio content to save.
         selected_points (dict): A dictionary of selected trailer elements.
+        movie_name (str): The name of the movie.
 
     Returns:
         str: The filepath of the saved audio file.
@@ -132,9 +134,10 @@ def save_audio_file(audio_content, selected_points):
     if not os.path.exists("generated_audio"):
         os.makedirs("generated_audio")
 
+    unique_id = uuid.uuid4()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     elements = "_".join([point.replace(" ", "-") for point in selected_points.values()])
-    filename = f"movie_trailer_{elements}_{timestamp}.mp3"
+    filename = f"{movie_name}_{elements}_{unique_id}_{timestamp}.mp3"
     filename = "".join(
         char for char in filename if char.isalnum() or char in ["_", "-", "."]
     )[:255]
@@ -175,21 +178,27 @@ def save_movie_data(movie_name, script, output_dir="assets/data"):
     return movie_data_file  # Return file path for confirmation
 
 
-import uuid
-
-
-def generate_movie_name_with_id(filename):
+def generate_movie_name_with_id(genre, main_character, setting, conflict, plot_twist):
     """
-    Generates a movie title using the Llama3 model, incorporating a unique ID.
+    Generates a movie title using the Llama3 model, incorporating the trailer elements.
 
     Args:
-        filename (str): The base filename to use for generating the movie title.
+        genre (str): The genre of the movie.
+        main_character (str): The main character of the movie.
+        setting (str): The setting of the movie.
+        conflict (str): The conflict of the movie.
+        plot_twist (str): The plot twist of the movie.
 
     Returns:
         str: The generated movie title in JSON format, or None if an error occurs.
     """
-    unique_id = uuid.uuid4()
-    prompt = f"""Based on the filename {filename} and unique ID {unique_id}, generate a catchy and appropriate movie title in JSON format:
+    prompt = f"""Based on the following movie elements:
+    Genre: {genre}
+    Main Character: {main_character}
+    Setting: {setting}
+    Conflict: {conflict}
+    Plot Twist: {plot_twist}
+    generate a catchy and appropriate movie title in JSON format:
 
 Example output:
 {{

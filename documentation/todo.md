@@ -14,3 +14,4 @@
 ## Next Up
 - [ ] Add image prompt generation as a future feature
 - [ ] Update the documentation to explain how to use Streamlit's secrets management
+- [ ] Add a mechanism to check that the movie title output is valid.

@@ -85,15 +85,17 @@ def main():
         if st.button("Generate Voice-Over Script"):
             with st.spinner("Generating movie name..."):
                 movie_name_response = generate_movie_name_with_id(
-                    st.session_state.generated_script
+                    st.session_state.selected_points["Genre"],
+                    st.session_state.selected_points["Main Character"],
+                    st.session_state.selected_points["Setting"],
+                    st.session_state.selected_points["Conflict"],
+                    st.session_state.selected_points["Plot Twist"],
                 )
-                if movie_name_response:
-                    st.session_state.movie_name = movie_name_response.get(
-                        "movie_name", ""
-                    )  # Save in session state
-                    st.success(f"Generated Movie Name: {st.session_state.movie_name}")
-                else:
-                    st.error("Failed to generate movie name. Please try again.")
+            if movie_name_response:
+                st.session_state.movie_name = movie_name_response.get("movie_name", "")
+                st.success(f"Generated Movie Name: {st.session_state.movie_name}")
+            else:
+                st.error("Failed to generate movie name. Please try again.")
 
             prompt = f"""[SYSTEM]
                 You are a professional voice-over artist reading a movie trailer script. Output ONLY the exact words to be spoken, with no additional context, descriptions, or formatting.
@@ -152,7 +154,9 @@ def main():
                 if audio:
                     # Save the audio file
                     audio_file_path = save_audio_file(
-                        audio, st.session_state.selected_points
+                        audio,
+                        st.session_state.selected_points,
+                        st.session_state.movie_name,
                     )
 
                     # Play the audio
@@ -161,7 +165,7 @@ def main():
                     # Provide download button
                     with open(audio_file_path, "rb") as file:
                         st.download_button(
-                            label="Download Audio",
+                            label="Download",
                             data=file,
                             file_name=os.path.basename(audio_file_path),
                             mime="audio/mp3",

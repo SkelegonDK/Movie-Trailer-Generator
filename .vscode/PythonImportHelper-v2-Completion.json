@@ -310,7 +310,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def save_audio_file(audio_content, selected_points):\n    \"\"\"\n    Saves the generated audio content to a file in the generated_audio directory.\n    Args:\n        audio_content (bytes): The audio content to save.\n        selected_points (dict): A dictionary of selected trailer elements.\n    Returns:\n        str: The filepath of the saved audio file.\n    \"\"\"\n    if not os.path.exists(\"generated_audio\"):",
+        "peekOfCode": "def save_audio_file(audio_content, selected_points, movie_name):\n    \"\"\"\n    Saves the generated audio content to a file in the generated_audio directory.\n    Args:\n        audio_content (bytes): The audio content to save.\n        selected_points (dict): A dictionary of selected trailer elements.\n        movie_name (str): The name of the movie.\n    Returns:\n        str: The filepath of the saved audio file.\n    \"\"\"",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -328,7 +328,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_movie_name_with_id(filename):\n    \"\"\"\n    Generates a movie title using the Llama3 model, incorporating a unique ID.\n    Args:\n        filename (str): The base filename to use for generating the movie title.\n    Returns:\n        str: The generated movie title in JSON format, or None if an error occurs.\n    \"\"\"\n    unique_id = uuid.uuid4()\n    prompt = f\"\"\"Based on the filename {filename} and unique ID {unique_id}, generate a catchy and appropriate movie title in JSON format:",
+        "peekOfCode": "def generate_movie_name_with_id(genre, main_character, setting, conflict, plot_twist):\n    \"\"\"\n    Generates a movie title using the Llama3 model, incorporating the trailer elements.\n    Args:\n        genre (str): The genre of the movie.\n        main_character (str): The main character of the movie.\n        setting (str): The setting of the movie.\n        conflict (str): The conflict of the movie.\n        plot_twist (str): The plot twist of the movie.\n    Returns:",
         "detail": "scripts.functions",
         "documentation": {}
     },
