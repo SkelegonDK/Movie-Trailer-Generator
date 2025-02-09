@@ -120,7 +120,7 @@ def main():
                 Format:
                 - Pure spoken text
                 - UPPERCASE for emphasis
-                - 75 - 150 words
+                - 100 - 200 words
                 - Line breaks only between distinct phrases
                 """
 
