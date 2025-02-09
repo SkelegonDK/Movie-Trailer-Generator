@@ -87,14 +87,6 @@
         "documentation": {}
     },
     {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
         "label": "uuid",
         "kind": 6,
         "isExtraImport": true,
@@ -113,23 +105,7 @@
         "documentation": {}
     },
     {
-        "label": "get_trailer_points",
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "isExtraImport": true,
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
         "label": "card",
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "isExtraImport": true,
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
-        "label": "generate_script_with_ollama",
         "importPath": "scripts.functions",
         "description": "scripts.functions",
         "isExtraImport": true,
@@ -145,7 +121,7 @@
         "documentation": {}
     },
     {
-        "label": "save_movie_data",
+        "label": "generate_movie_name_with_id",
         "importPath": "scripts.functions",
         "description": "scripts.functions",
         "isExtraImport": true,
@@ -153,7 +129,15 @@
         "documentation": {}
     },
     {
-        "label": "generate_movie_name_with_id",
+        "label": "generate_script_with_ollama",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "get_trailer_points",
         "importPath": "scripts.functions",
         "description": "scripts.functions",
         "isExtraImport": true,
@@ -281,7 +265,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def get_trailer_points():\n    category_order = [\"genre\", \"main_character\", \"setting\", \"conflict\", \"plot_twist\"]\n    trailer_points = []\n    data_dir = \"assets/data\"\n    for category in category_order:\n        filename = f\"{category}.json\"\n        with open(os.path.join(data_dir, filename), \"r\") as f:\n            trailer_points.append(json.load(f))\n    return trailer_points\ndef generate_with_llama3(prompt):",
+        "peekOfCode": "def get_trailer_points():\n    \"\"\"\n    Retrieves trailer elements from JSON files in the assets/data directory.\n    Returns:\n        list: A list of dictionaries, where each dictionary represents a trailer element\n              (genre, main_character, setting, conflict, plot_twist) and contains\n              its category and options.\n    \"\"\"\n    category_order = [\"genre\", \"main_character\", \"setting\", \"conflict\", \"plot_twist\"]\n    trailer_points = []",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -290,7 +274,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        return None\n@st.cache_data\ndef card(category, option, color):",
+        "peekOfCode": "def generate_with_llama3(prompt):\n    \"\"\"\n    Generates content using the Llama3 model via a local Ollama instance.\n    Args:\n        prompt (str): The prompt to send to the Llama3 model.\n    Returns:\n        str: The generated content from the Llama3 model, or None if an error occurs.\n    \"\"\"\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -299,7 +283,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def card(category, option, color):\n    st.markdown(\n        f\"\"\"\n    <div style=\"\n        background-color: {color};\n        border-radius: 10px;\n        padding: 20px;\n        margin: 10px 0;\n        height: auto;\n        display: flex;",
+        "peekOfCode": "def card(category, option, color):\n    \"\"\"\n    Displays a card with a category and option.\n    Args:\n        category (str): The category of the card.\n        option (str): The option to display on the card.\n        color (str): The background color of the card.\n    \"\"\"\n    st.markdown(\n        f\"\"\"",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -308,7 +292,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_script_with_ollama(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating script: {response.text}\")\n        return None\ndef generate_audio_with_elevenlabs(text, voice_id=\"FF7KdobWPaiR0vkcALHF\"):",
+        "peekOfCode": "def generate_script_with_ollama(prompt):\n    \"\"\"\n    Generates a movie trailer script using the Llama3 model via a local Ollama instance.\n    Args:\n        prompt (str): The prompt to send to the Llama3 model.\n    Returns:\n        str: The generated movie trailer script from the Llama3 model, or None if an error occurs.\n    \"\"\"\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -326,7 +310,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def save_audio_file(audio_content, selected_points):\n    if not os.path.exists(\"generated_audio\"):\n        os.makedirs(\"generated_audio\")\n    timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n    elements = \"_\".join([point.replace(\" \", \"-\") for point in selected_points.values()])\n    filename = f\"movie_trailer_{elements}_{timestamp}.mp3\"\n    filename = \"\".join(\n        char for char in filename if char.isalnum() or char in [\"_\", \"-\", \".\"]\n    )[:255]\n    filepath = os.path.join(\"generated_audio\", filename)",
+        "peekOfCode": "def save_audio_file(audio_content, selected_points):\n    \"\"\"\n    Saves the generated audio content to a file in the generated_audio directory.\n    Args:\n        audio_content (bytes): The audio content to save.\n        selected_points (dict): A dictionary of selected trailer elements.\n    Returns:\n        str: The filepath of the saved audio file.\n    \"\"\"\n    if not os.path.exists(\"generated_audio\"):",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -335,7 +319,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def save_movie_data(movie_name, script, output_dir=\"assets/data\"):\n    # Ensure the output directory exists\n    os.makedirs(output_dir, exist_ok=True)\n    # Create the data structure\n    movie_data = {\n        \"movie_name\": movie_name,\n        \"script\": script,\n    }\n    # Save movie data\n    movie_data_file = os.path.join(output_dir, \"movie_data.json\")",
+        "peekOfCode": "def save_movie_data(movie_name, script, output_dir=\"assets/data\"):\n    \"\"\"\n    Saves the movie data (name and script) to a JSON file in the assets/data directory.\n    Args:\n        movie_name (str): The name of the movie.\n        script (str): The movie trailer script.\n        output_dir (str, optional): The directory to save the movie data to. Defaults to \"assets/data\".\n    Returns:\n        str: The filepath of the saved movie data file.\n    \"\"\"",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -344,7 +328,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_movie_name_with_id(filename):\n    unique_id = uuid.uuid4()\n    prompt = f\"\"\"Based on the filename {filename} and unique ID {unique_id}, generate a catchy and appropriate movie title in JSON format:\nExample output:\n{{\n    \"movie_name\": \"The Last Samurai\"\n}}\nGuidelines:\n- The title should be short and memorable (1-5 words)\n- It should reflect the genre, tone, and main elements of the movie",
+        "peekOfCode": "def generate_movie_name_with_id(filename):\n    \"\"\"\n    Generates a movie title using the Llama3 model, incorporating a unique ID.\n    Args:\n        filename (str): The base filename to use for generating the movie title.\n    Returns:\n        str: The generated movie title in JSON format, or None if an error occurs.\n    \"\"\"\n    unique_id = uuid.uuid4()\n    prompt = f\"\"\"Based on the filename {filename} and unique ID {unique_id}, generate a catchy and appropriate movie title in JSON format:",
         "detail": "scripts.functions",
         "documentation": {}
     },

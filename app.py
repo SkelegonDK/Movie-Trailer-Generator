@@ -1,16 +1,14 @@
 import os
-import streamlit as st
 import random
-import requests
-from datetime import datetime
-import json
+
+import streamlit as st
+
 from scripts.functions import (
-    get_trailer_points,
     card,
-    generate_script_with_ollama,
     generate_audio_with_elevenlabs,
-    save_movie_data,
     generate_movie_name_with_id,
+    generate_script_with_ollama,
+    get_trailer_points,
     save_audio_file,
 )
 
@@ -37,7 +35,7 @@ def main():
         st.session_state.generated_script = ""  # Initialize as an empty string
 
     # Create three columns: one for the cards, one for the main content, and one for the audio browser
-    card_col, main_col, audio_col = st.columns([1, 2, 1])
+    card_col, main_col, empty_col = st.columns([1, 2, 1])
 
     # Cards column
     with card_col:

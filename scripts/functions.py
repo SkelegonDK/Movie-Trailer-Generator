@@ -6,6 +6,14 @@ from datetime import datetime
 
 
 def get_trailer_points():
+    """
+    Retrieves trailer elements from JSON files in the assets/data directory.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary represents a trailer element
+              (genre, main_character, setting, conflict, plot_twist) and contains
+              its category and options.
+    """
     category_order = ["genre", "main_character", "setting", "conflict", "plot_twist"]
     trailer_points = []
     data_dir = "assets/data"
@@ -19,6 +27,15 @@ def get_trailer_points():
 
 
 def generate_with_llama3(prompt):
+    """
+    Generates content using the Llama3 model via a local Ollama instance.
+
+    Args:
+        prompt (str): The prompt to send to the Llama3 model.
+
+    Returns:
+        str: The generated content from the Llama3 model, or None if an error occurs.
+    """
     url = "http://localhost:11434/api/generate"
     data = {"model": "llama3.2:3b", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
@@ -30,6 +47,14 @@ def generate_with_llama3(prompt):
 
 @st.cache_data
 def card(category, option, color):
+    """
+    Displays a card with a category and option.
+
+    Args:
+        category (str): The category of the card.
+        option (str): The option to display on the card.
+        color (str): The background color of the card.
+    """
     st.markdown(
         f"""
     <div style="
@@ -52,6 +77,15 @@ def card(category, option, color):
 
 
 def generate_script_with_ollama(prompt):
+    """
+    Generates a movie trailer script using the Llama3 model via a local Ollama instance.
+
+    Args:
+        prompt (str): The prompt to send to the Llama3 model.
+
+    Returns:
+        str: The generated movie trailer script from the Llama3 model, or None if an error occurs.
+    """
     url = "http://localhost:11434/api/generate"
     data = {"model": "llama3.2:3b", "prompt": prompt, "stream": False}
     response = requests.post(url, json=data)
@@ -85,6 +119,16 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
 
 
 def save_audio_file(audio_content, selected_points):
+    """
+    Saves the generated audio content to a file in the generated_audio directory.
+
+    Args:
+        audio_content (bytes): The audio content to save.
+        selected_points (dict): A dictionary of selected trailer elements.
+
+    Returns:
+        str: The filepath of the saved audio file.
+    """
     if not os.path.exists("generated_audio"):
         os.makedirs("generated_audio")
 
@@ -103,6 +147,17 @@ def save_audio_file(audio_content, selected_points):
 
 
 def save_movie_data(movie_name, script, output_dir="assets/data"):
+    """
+    Saves the movie data (name and script) to a JSON file in the assets/data directory.
+
+    Args:
+        movie_name (str): The name of the movie.
+        script (str): The movie trailer script.
+        output_dir (str, optional): The directory to save the movie data to. Defaults to "assets/data".
+
+    Returns:
+        str: The filepath of the saved movie data file.
+    """
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
@@ -124,6 +179,15 @@ import uuid
 
 
 def generate_movie_name_with_id(filename):
+    """
+    Generates a movie title using the Llama3 model, incorporating a unique ID.
+
+    Args:
+        filename (str): The base filename to use for generating the movie title.
+
+    Returns:
+        str: The generated movie title in JSON format, or None if an error occurs.
+    """
     unique_id = uuid.uuid4()
     prompt = f"""Based on the filename {filename} and unique ID {unique_id}, generate a catchy and appropriate movie title in JSON format:
 
