@@ -95,6 +95,15 @@
         "documentation": {}
     },
     {
+        "label": "uuid",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "uuid",
+        "description": "uuid",
+        "detail": "uuid",
+        "documentation": {}
+    },
+    {
         "label": "random",
         "kind": 6,
         "isExtraImport": true,
@@ -105,14 +114,6 @@
     },
     {
         "label": "get_trailer_points",
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "isExtraImport": true,
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
-        "label": "generate_with_llama3",
         "importPath": "scripts.functions",
         "description": "scripts.functions",
         "isExtraImport": true,
@@ -136,22 +137,6 @@
         "documentation": {}
     },
     {
-        "label": "generate_movie_name",
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "isExtraImport": true,
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
-        "label": "generate_image_prompts",
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "isExtraImport": true,
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
         "label": "generate_audio_with_elevenlabs",
         "importPath": "scripts.functions",
         "description": "scripts.functions",
@@ -160,7 +145,7 @@
         "documentation": {}
     },
     {
-        "label": "save_audio_file",
+        "label": "save_movie_data",
         "importPath": "scripts.functions",
         "description": "scripts.functions",
         "isExtraImport": true,
@@ -168,7 +153,15 @@
         "documentation": {}
     },
     {
-        "label": "save_movie_data",
+        "label": "generate_movie_name_with_id",
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "isExtraImport": true,
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "save_audio_file",
         "importPath": "scripts.functions",
         "description": "scripts.functions",
         "isExtraImport": true,
@@ -270,16 +263,7 @@
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        return None  # Handle error appropriately\n@st.cache_data\ndef get_trailer_points():",
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
-        "label": "get_trailer_points",
-        "kind": 2,
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "peekOfCode": "def get_trailer_points():\n    category_order = [\"genre\", \"main_character\", \"setting\", \"conflict\", \"plot_twist\"]\n    trailer_points = []\n    data_dir = \"assets/data\"\n    for category in category_order:\n        filename = f\"{category}.json\"\n        with open(os.path.join(data_dir, filename), \"r\") as f:\n            trailer_points.append(json.load(f))\n    return trailer_points\n@st.cache_data",
+        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        return None\n@st.cache_data\ndef card(category, option, color):",
         "detail": "scripts.functions",
         "documentation": {}
     },
@@ -320,38 +304,20 @@
         "documentation": {}
     },
     {
-        "label": "generate_with_llama3",
-        "kind": 2,
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "peekOfCode": "def generate_with_llama3(prompt):\n    url = \"http://localhost:11434/api/generate\"\n    data = {\"model\": \"llama3.2:3b\", \"prompt\": prompt, \"stream\": False}\n    response = requests.post(url, json=data)\n    if response.status_code == 200:\n        return response.json()[\"response\"]\n    else:\n        st.error(f\"Error generating content: {response.text}\")\n        return None\ndef generate_movie_name(script):",
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
-        "label": "generate_movie_name",
-        "kind": 2,
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "peekOfCode": "def generate_movie_name(script):\n    prompt = f\"\"\"Based on the following movie trailer script, generate a catchy and appropriate movie title in JSON format:\nScript:\n{script}\nExample output:\n{{\n    \"movie_name\": \"The Last Samurai\"\n}}\nGuidelines:\n- The title should be short and memorable (1-5 words)",
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
-        "label": "generate_image_prompts",
-        "kind": 2,
-        "importPath": "scripts.functions",
-        "description": "scripts.functions",
-        "peekOfCode": "def generate_image_prompts(script, selected_points):\n    prompt = f\"\"\"Based on the following movie trailer script and elements, create 5 detailed image prompts for key scenes in the movie in JSON format:\nScript:\n{script}\nElements:\nGenre: {selected_points['Genre']}\nSetting: {selected_points['Setting']}\nMain Character: {selected_points['Main Character']}\nConflict: {selected_points['Conflict']}\nPlot Twist: {selected_points['Plot Twist']}",
-        "detail": "scripts.functions",
-        "documentation": {}
-    },
-    {
         "label": "save_movie_data",
         "kind": 2,
         "importPath": "scripts.functions",
         "description": "scripts.functions",
-        "peekOfCode": "def save_movie_data(movie_name, image_prompts, script, output_dir=\"assets/data\"):\n    # Ensure the output directory exists\n    os.makedirs(output_dir, exist_ok=True)\n    # Create the data structure\n    movie_data = {\n        \"movie_name\": movie_name,\n        \"image_prompts\": image_prompts,\n        \"script\": script,\n    }\n    # Save movie data",
+        "peekOfCode": "def save_movie_data(movie_name, script, output_dir=\"assets/data\"):\n    # Ensure the output directory exists\n    os.makedirs(output_dir, exist_ok=True)\n    # Create the data structure\n    movie_data = {\n        \"movie_name\": movie_name,\n        \"script\": script,\n    }\n    # Save movie data\n    movie_data_file = os.path.join(output_dir, \"movie_data.json\")",
+        "detail": "scripts.functions",
+        "documentation": {}
+    },
+    {
+        "label": "generate_movie_name_with_id",
+        "kind": 2,
+        "importPath": "scripts.functions",
+        "description": "scripts.functions",
+        "peekOfCode": "def generate_movie_name_with_id(filename):\n    unique_id = uuid.uuid4()\n    prompt = f\"\"\"Based on the filename {filename} and unique ID {unique_id}, generate a catchy and appropriate movie title in JSON format:\nExample output:\n{{\n    \"movie_name\": \"The Last Samurai\"\n}}\nGuidelines:\n- The title should be short and memorable (1-5 words)\n- It should reflect the genre, tone, and main elements of the movie",
         "detail": "scripts.functions",
         "documentation": {}
     },

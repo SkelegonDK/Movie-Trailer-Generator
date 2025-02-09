@@ -6,14 +6,12 @@ from datetime import datetime
 import json
 from scripts.functions import (
     get_trailer_points,
-    generate_with_llama3,
     card,
     generate_script_with_ollama,
-    generate_movie_name,
-    generate_image_prompts,
     generate_audio_with_elevenlabs,
-    save_audio_file,
     save_movie_data,
+    generate_movie_name_with_id,
+    save_audio_file,
 )
 
 
@@ -44,27 +42,45 @@ def main():
     # Cards column
     with card_col:
         st.subheader("Selected Elements")
+
+        # Add a toggle button to switch between Random and Custom mode
+        if "custom_mode" not in st.session_state:
+            st.session_state.custom_mode = False
+        custom_mode = st.toggle("Custom Mode", value=st.session_state.custom_mode)
+        st.session_state.custom_mode = custom_mode
+
         for point, color in zip(trailer_points, colors):
             category = point["category"]
-            option = st.session_state.selected_points[category]
-            card(category, option, color)
-
-            if st.button(
-                f"🎲 Randomize {category}",
-                key=f"randomize_{category}",
-                use_container_width=True,
-            ):
-                st.session_state.selected_points[category] = random.choice(
-                    point["options"]
+            if custom_mode:
+                # Custom mode: use text input for custom elements
+                custom_element = st.text_input(
+                    f"Custom {category}",
+                    value=st.session_state.selected_points[category],
+                    key=f"custom_{category}",
                 )
-                st.rerun()
+                st.session_state.selected_points[category] = custom_element
+                card(category, custom_element, color)
+            else:
+                # Random mode: use random elements
+                option = st.session_state.selected_points[category]
+                card(category, option, color)
+                if st.button(
+                    f"🎲 Randomize {category}",
+                    key=f"randomize_{category}",
+                    use_container_width=True,
+                ):
+                    st.session_state.selected_points[category] = random.choice(
+                        point["options"]
+                    )
+                    st.rerun()
 
-        if st.button("🎲 Randomize All", use_container_width=True):
-            st.session_state.selected_points = {
-                point["category"]: random.choice(point["options"])
-                for point in trailer_points
-            }
-            st.rerun()
+        if not custom_mode:
+            if st.button("🎲 Randomize All", use_container_width=True):
+                st.session_state.selected_points = {
+                    point["category"]: random.choice(point["options"])
+                    for point in trailer_points
+                }
+                st.rerun()
 
     # Main content column
     with main_col:
@@ -92,7 +108,7 @@ def main():
                 Format:
                 - Pure spoken text
                 - UPPERCASE for emphasis
-                - 50-75 words
+                - 75 - 150 words
                 - Line breaks only between distinct phrases
                 """
 
@@ -149,7 +165,7 @@ def main():
         with col1:
             if st.button("Generate Movie Name"):
                 with st.spinner("Generating movie name..."):
-                    movie_name_response = generate_movie_name(
+                    movie_name_response = generate_movie_name_with_id(
                         st.session_state.generated_script
                     )
                 if movie_name_response:
@@ -161,39 +177,15 @@ def main():
                     # Save movie data to JSON
                     save_movie_data(
                         st.session_state.movie_name,
-                        st.session_state.image_prompts,
                         st.session_state.generated_script,
                     )  # Pass the script
                 else:
                     st.error("Failed to generate movie name. Please try again.")
 
             with col2:
-                if st.button("Generate Image Prompts"):
-                    with st.spinner("Generating image prompts..."):
-                        image_prompts_response = generate_image_prompts(
-                            st.session_state.generated_script,
-                            st.session_state.selected_points,
-                        )
-                    if image_prompts_response:
-                        st.session_state.image_prompts = image_prompts_response.get(
-                            "image_prompts", []
-                        )  # Save in session state
-                        st.success("Image prompts generated successfully!")
-                        st.text_area(
-                            "Image Prompts", st.session_state.image_prompts, height=200
-                        )
-
-                        # Save movie data to JSON
-                        save_movie_data(
-                            st.session_state.movie_name,
-                            st.session_state.image_prompts,
-                            st.session_state.generated_script,
-                        )  # Pass the script
-                    else:
-                        st.error("Failed to generate image prompts. Please try again.")
+                pass
             with empty_col:
                 st.markdown(st.session_state.movie_name)
-                st.write(json.dumps(st.session_state.image_prompts))
 
         with st.expander("Generated Audio Files"):
             st.subheader("Generated Audio Files")
