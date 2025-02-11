@@ -164,3 +164,4 @@ cython_debug/
 /.vscode
 .vscode/PythonImportHelper-v2-Completion.json
 .DS_Store
+*.png
