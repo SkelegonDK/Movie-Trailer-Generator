@@ -270,8 +270,12 @@ def apply_background_music(audio_filepath):
 
         # Mix audio and save
         output_path = audio_filepath.replace("voiceover_", "final_")
-        voice_over.overlay(stretched, position=0).export(output_path, format="mp3")
-        return output_path
+        if os.path.exists(audio_filepath):
+            voice_over.overlay(stretched, position=0).export(output_path, format="mp3")
+            return output_path
+        else:
+            st.error(f"Audio file not found: {audio_filepath}")
+            return None
     except Exception as e:
         st.error(f"Error applying background music: {str(e)}")
         return None
