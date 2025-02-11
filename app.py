@@ -192,27 +192,23 @@ def main():
                             )
                     else:
                         st.error("Failed to apply background music. Please try again.")
+
+                    st.audio(audio_with_music_path, format="audio/mp3")
+                    with open(audio_with_music_path, "rb") as file:
+                        st.download_button(
+                            label="Download",
+                            data=file,
+                            file_name=os.path.basename(audio_with_music_path),
+                            mime="audio/mp3",
+                        )
                 else:
                     st.error("Failed to generate audio. Please try again.")
 
-        st.subheader("Generated Audio Files")
-        audio_files = [f for f in os.listdir("generated_audio") if f.endswith(".mp3")]
-
-        if audio_files:
-            audio_file = audio_files[0]
-            audio_path = os.path.join("generated_audio", audio_file)
-            st.markdown(f"**{audio_file}**")
-            st.audio(audio_path, format="audio/mp3")
-
-            with open(audio_path, "rb") as file:
-                st.download_button(
-                    label="Download",
-                    data=file,
-                    file_name=audio_file,
-                    mime="audio/mp3",
-                )
-        else:
-            st.write("No audio files generated yet.")
+        # Note about Audio Browser
+        st.markdown("---")
+        st.info(
+            "👉 Check out the Audio Browser page to view all generated audio files!"
+        )
 
 
 if __name__ == "__main__":
