@@ -1,4 +1,4 @@
-# Stupid Movie Trailer Generator
+# Movie Trailer Generator
 
 Create hilarious movie trailers with randomly generated elements! This application uses AI to generate scripts and voiceovers for trailers based on your chosen themes.
 
