@@ -136,7 +136,7 @@ def main():
 
                 Output format:
                 - Pure spoken text.
-                - use only UPPERCASE for emphasis on specific words. Example: "it's NOW or NEVER".
+                - use only uppercase letters for emphasis on specific words. Example: "it's NOW or NEVER".
                 - between 100 and 150 words.
                 - Line breaks only between distinct sentences.
                 - comma for short pauses, periods for longer pauses and dashes for dramatic pauses. example: "I'm going to the store - I'll be back in 30 minutes"
