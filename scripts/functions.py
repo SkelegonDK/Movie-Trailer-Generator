@@ -2,10 +2,12 @@ import os
 import json
 import uuid
 from datetime import datetime
+from typing import Any
+import subprocess
 import requests
 import streamlit as st
-import subprocess
-from typing import Any
+from scripts import prompts
+
 
 try:
     from pydub import AudioSegment
@@ -30,7 +32,7 @@ def get_trailer_points():
 
     for category in category_order:
         filename = f"{category}.json"
-        with open(os.path.join(data_dir, filename), "r") as f:
+        with open(os.path.join(data_dir, filename), "r", encoding="utf-8") as f:
             trailer_points.append(json.load(f))
 
     return trailer_points
@@ -67,31 +69,130 @@ def card(category, option, color):
     )
 
 
-def generate_script_with_ollama(prompt):
+def generate_script_with_ollama(selected_points, movie_name):
     """
-    Generates a movie trailer script using the selected Llama model via a local Ollama instance.
+    Generates a movie trailer script using the selected model via Ollama.
+    Works with both local models and OpenRouter models configured in Ollama.
 
     Args:
-        prompt (str): The prompt to send to the Llama model.
+        selected_points (dict): Dictionary containing movie elements
+        movie_name (str): The generated movie name
 
     Returns:
-        str: The generated movie trailer script from the Llama3 model, or None if an error occurs.
+        str: The generated movie trailer script, or None if an error occurs.
     """
-    url = "http://localhost:11434/api/generate"
+    url = "http://localhost:11434/api/chat"  # Using chat endpoint for better compatibility
+
+    # Format the prompt with the provided data
+    prompt = prompts.SCRIPT_USER_PROMPT.format(
+        title=movie_name,
+        genre=selected_points["Genre"],
+        setting=selected_points["Setting"],
+        character=selected_points["Main Character"],
+        conflict=selected_points["Conflict"],
+        plot_twist=selected_points["Plot Twist"],
+    )
+
+    messages = [
+        {
+            "role": "system",
+            "content": prompts.SCRIPT_SYSTEM_PROMPT,
+        },
+        {"role": "user", "content": prompt},
+    ]
+
     data = {
         "model": st.session_state.get("selected_model", "llama3.2:3b"),
-        "prompt": prompt,
+        "messages": messages,
         "stream": False,
+        "options": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+        },
     }
+
     try:
         response = requests.post(url, json=data, timeout=60)
         if response.status_code == 200:
-            return response.json()["response"]
+            response_data = response.json()
+            # Handle both chat and completion response formats
+            if "message" in response_data:
+                return response_data["message"]["content"]
+            return response_data["response"]
         else:
             st.error(f"Error generating script: {response.text}")
             return None
     except requests.exceptions.RequestException as e:
         st.error(f"Error generating script: {str(e)}")
+        return None
+
+
+def generate_script_with_openrouter(selected_points, movie_name):
+    """
+    Generates a movie trailer script using OpenRouter API with free models.
+
+    Args:
+        selected_points (dict): Dictionary containing movie elements
+        movie_name (str): The generated movie name
+
+    Returns:
+        str: The generated movie trailer script, or None if an error occurs.
+    """
+    url = "https://api.openrouter.ai/api/v1/chat/completions"
+
+    # Format the prompt with the provided data
+    prompt = prompts.SCRIPT_USER_PROMPT.format(
+        title=movie_name,
+        genre=selected_points["Genre"],
+        setting=selected_points["Setting"],
+        character=selected_points["Main Character"],
+        conflict=selected_points["Conflict"],
+        plot_twist=selected_points["Plot Twist"],
+    )
+
+    # Use the free models
+    model = st.session_state.get("selected_model", "google/gemma-7b-it:free")
+
+    headers = {
+        "Authorization": f"Bearer {st.secrets.get('OPENROUTER_API_KEY')}",
+        "HTTP-Referer": "https://github.com/manuelthomsen/Stupid-Movie-Trailer-Generator",
+        "X-Title": "Stupid Movie Trailer Generator",
+        "Content-Type": "application/json",
+    }
+
+    data = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": prompts.SCRIPT_SYSTEM_PROMPT,
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.5,  # Lower temperature for better instruction following
+        "max_tokens": 100,
+    }
+
+    try:
+        # Print request details for debugging
+        st.write(f"Sending request to OpenRouter with model: {model}")
+
+        response = requests.post(url, json=data, headers=headers, timeout=60)
+
+        # Print response status and content for debugging
+        st.write(f"Response status code: {response.status_code}")
+        if response.status_code != 200:
+            st.write(f"Error response: {response.text}")
+
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error generating script with OpenRouter: {str(e)}")
+        if hasattr(e.response, "text"):
+            st.error(f"API Response: {e.response.text}")
+        return None
+    except (KeyError, json.JSONDecodeError) as e:
+        st.error(f"Error parsing OpenRouter response: {str(e)}")
         return None
 
 
@@ -170,7 +271,7 @@ def save_movie_data(movie_name, script, output_dir="assets/data"):
 
 def generate_movie_name_with_id(genre, main_character, setting, conflict, plot_twist):
     """
-    Generates a movie title using the Llama3 model, incorporating the trailer elements.
+    Generates a movie title using the selected model via Ollama.
 
     Args:
         genre (str): The genre of the movie.
@@ -180,34 +281,58 @@ def generate_movie_name_with_id(genre, main_character, setting, conflict, plot_t
         plot_twist (str): The plot twist of the movie.
 
     Returns:
-        str: The generated movie title in JSON format, or None if an error occurs.
+        dict: A dictionary containing the movie name, or None if an error occurs.
     """
-    prompt = f"""Based on the following movie elements:
-    Genre: {genre}
-    Main Character: {main_character}
-    Setting: {setting}
-    Conflict: {conflict}
-    Plot Twist: {plot_twist}
-    generate a catchy and appropriate movie title in JSON format:
+    url = "http://localhost:11434/api/chat"
 
-Example output:
-{{
-    "movie_name": "The Last Samurai"
-}}
+    prompt = prompts.MOVIE_TITLE_USER_PROMPT.format(
+        genre=genre,
+        main_character=main_character,
+        setting=setting,
+        conflict=conflict,
+        plot_twist=plot_twist,
+    )
 
-Guidelines:
-- The title should be short and memorable (1-5 words)
-- It should reflect the genre, tone, and main elements of the movie
-- Be creative and avoid generic titles
-- Do not use quotes or explanations, just provide the JSON output
+    messages = [
+        {
+            "role": "system",
+            "content": prompts.MOVIE_TITLE_SYSTEM_PROMPT,
+        },
+        {"role": "user", "content": prompt},
+    ]
 
-Output:"""
+    data = {
+        "model": st.session_state.get("selected_model", "llama3.2:3b"),
+        "messages": messages,
+        "stream": False,
+        "options": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+        },
+    }
 
-    response = generate_script_with_ollama(prompt)
-    print("LLM Response:", response)  # Debugging line
-    if response:
-        return json.loads(response)  # Parse the JSON response
-    return None
+    try:
+        response = requests.post(url, json=data, timeout=60)
+        if response.status_code == 200:
+            response_data = response.json()
+            content = (
+                response_data["message"]["content"]
+                if "message" in response_data
+                else response_data["response"]
+            )
+            # Return a dictionary with the movie name
+            return {"movie_name": content.strip()}
+        else:
+            st.error(
+                f"Error generating movie name: {response.status_code} - {response.text}"
+            )
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request error generating movie name: {str(e)}")
+        return None
+    except Exception as e:  # Catch potential errors if response is not as expected
+        st.error(f"Unexpected error processing movie name response: {str(e)}")
+        return None
 
 
 def get_ollama_models():
