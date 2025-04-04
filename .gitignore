@@ -165,3 +165,4 @@ cython_debug/
 .vscode/PythonImportHelper-v2-Completion.json
 .DS_Store
 *.png
+.cursorrules
