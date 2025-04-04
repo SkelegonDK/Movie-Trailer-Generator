@@ -6,28 +6,32 @@ Create hilarious movie trailers with randomly generated elements! This applicati
 
 Before you begin, you'll need to have Python installed on your computer. You can download it from [https://www.python.org/downloads/](https://www.python.org/downloads/).
 
-1. **Install Dependencies:**
+1. **Install `uv`:**
 
-    This project requires a few Python libraries. You can install them using the following command in your terminal (Mac) or Command Prompt (Windows):
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-    Alternatively, you can install the required libraries individually:
+    This project uses `uv` for managing dependencies and virtual environments. Install it first (you might need `pip`):
 
     ```bash
-    pip install streamlit requests pydub
+    pip install uv
     ```
+    *(Refer to the [official uv documentation](https://github.com/astral-sh/uv) for other installation methods if needed).*
 
-2. **Audio Processing Requirements:**
+2. **Install Project Dependencies:**
+
+    Navigate to the project directory in your terminal and run:
+
+    ```bash
+    uv sync
+    ```
+    This command will create a virtual environment (if one isn't active) and install all necessary Python libraries defined in `pyproject.toml`.
+
+3. **Audio Processing Requirements:**
 
     This project uses pydub for audio processing. You'll need to have the following:
 
     * Background music file: Place your trailer music in `assets/audio/trailer_music.mp3`
     * The background music will be automatically stretched to match the voice-over length and mixed at a lower volume
 
-3. **Install Ollama and the required model:**
+4. **Install Ollama and the required model:**
 
     This project uses Ollama to generate the movie trailer script. Here's how to install it:
 
