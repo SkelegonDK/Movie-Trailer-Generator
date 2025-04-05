@@ -5,6 +5,7 @@ import requests
 from scripts.openrouter_client import OpenRouterClient
 from requests.exceptions import RequestException, ConnectionError, Timeout
 from config import Config
+from utils.llm_api import call_llm
 
 import streamlit as st
 from scripts import functions, prompts
@@ -160,56 +161,141 @@ def main():
     # Main content column
     with main_col:
         if st.button("Generate Voice-Over Script"):
-            with st.spinner("Generating movie name..."):
-                if st.session_state.use_local_model:
-                    movie_name_response = functions.generate_movie_name_with_id(
-                        st.session_state.selected_points["Genre"],
-                        st.session_state.selected_points["Main Character"],
-                        st.session_state.selected_points["Setting"],
-                        st.session_state.selected_points["Conflict"],
-                        st.session_state.selected_points["Plot Twist"],
-                    )
-                    # Extract movie name from dictionary response
-                    movie_name = (
-                        movie_name_response.get("movie_name")
-                        if movie_name_response
-                        else None
-                    )
-                else:
-                    # Use OpenRouter for movie name generation
-                    movie_name = generate_movie_name_with_openrouter(
-                        st.session_state.selected_points["Genre"],
-                        st.session_state.selected_model,
-                    )
+            st.session_state.script_generated = False
+            st.session_state.generated_script = None
+            st.session_state.movie_name = None
 
-            # Check if we have a valid movie name
-            if movie_name and isinstance(movie_name, str):
-                st.session_state.movie_name = movie_name
-                st.success(f"Generated Movie Name: {st.session_state.movie_name}")
+            # --- Determine API parameters ---
+            api_key = None
+            base_url = None
+            model_name_for_generation = None
 
-                with st.spinner("Generating voice-over script..."):
-                    if st.session_state.use_local_model:
-                        script = functions.generate_script_with_ollama(
-                            selected_points=st.session_state.selected_points,
-                            movie_name=st.session_state.movie_name,
-                        )
-                    else:
-                        script = functions.generate_script_with_openrouter(
-                            selected_points=st.session_state.selected_points,
-                            movie_name=st.session_state.movie_name,
-                        )
+            config = Config.load()
 
-                if script:
-                    formatted_script = "\n\n".join(
-                        [line.strip() for line in script.split("\n") if line.strip()]
-                    )
-                    st.session_state.generated_script = formatted_script
-                    st.session_state.script_generated = True
-                else:
-                    st.error("Failed to generate script. Please try again.")
-                    st.session_state.script_generated = False
+            if st.session_state.use_local_model:
+                # Assume Ollama setup
+                # Get base URL from config or env var if available, else default
+                base_url = getattr(
+                    config,
+                    "ollama_base_url",
+                    os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+                )
+                # Ollama's OpenAI compatible endpoint often uses a placeholder key
+                api_key = getattr(
+                    config, "ollama_api_key", os.getenv("OLLAMA_API_KEY", "ollama")
+                )
+                # Get the specific local model name from session state
+                model_name_for_generation = st.session_state.selected_model
             else:
-                st.error("Failed to generate movie name. Please try again.")
+                # Use OpenRouter
+                base_url = "https://openrouter.ai/api/v1"
+                api_key = config.openrouter_api_key
+                model_name_for_generation = st.session_state.selected_model
+
+            # Basic validation of parameters
+            if not api_key or not base_url or not model_name_for_generation:
+                st.error(
+                    "API Key, Base URL, or Model Name is missing. Please check configuration."
+                )
+            else:
+                # --- First LLM Call (Movie Name) using call_llm ---
+                movie_name = None
+                try:
+                    with st.spinner("Generating movie name..."):
+                        # Prepare the prompt for movie name generation
+                        movie_name_prompt = prompts.MOVIE_TITLE_USER_PROMPT.format(
+                            genre=st.session_state.selected_points["Genre"],
+                            main_character=st.session_state.selected_points[
+                                "Main Character"
+                            ],
+                            setting=st.session_state.selected_points["Setting"],
+                            conflict=st.session_state.selected_points["Conflict"],
+                            plot_twist=st.session_state.selected_points["Plot Twist"],
+                        )
+
+                        movie_name = call_llm(
+                            model_name=model_name_for_generation,
+                            prompt=movie_name_prompt,
+                            api_key=api_key,
+                            base_url=base_url,
+                            temperature=0.7,
+                            max_tokens=50,
+                        )
+                except Exception as e:
+                    st.error(f"Error generating movie name: {e}")
+                    st.stop()
+
+                # --- Check Movie Name ---
+                if movie_name and isinstance(movie_name, str):
+                    # Clean up potential quotes or extra whitespace
+                    st.session_state.movie_name = movie_name.strip().replace('"', "")
+                    st.success(f"Generated Movie Name: {st.session_state.movie_name}")
+
+                    # --- Second LLM Call (Script) using call_llm ---
+                    script = None
+                    try:
+                        with st.spinner("Generating voice-over script..."):
+                            # Prepare the prompt for script generation
+                            # Ensure keys match the placeholders in prompts.SCRIPT_USER_PROMPT
+                            script_prompt_args = {
+                                "title": st.session_state.movie_name,  # Use 'title' key
+                                "genre": st.session_state.selected_points["Genre"],
+                                "setting": st.session_state.selected_points["Setting"],
+                                "character": st.session_state.selected_points[
+                                    "Main Character"
+                                ],  # Use 'character' key
+                                "conflict": st.session_state.selected_points[
+                                    "Conflict"
+                                ],
+                                "plot_twist": st.session_state.selected_points[
+                                    "Plot Twist"
+                                ],
+                            }
+                            script_prompt = prompts.SCRIPT_USER_PROMPT.format(
+                                **script_prompt_args
+                            )
+
+                            script = call_llm(
+                                model_name=model_name_for_generation,
+                                prompt=script_prompt,
+                                api_key=api_key,
+                                base_url=base_url,
+                                temperature=0.7,
+                                max_tokens=500,
+                            )
+                    except KeyError as e:
+                        st.error(
+                            f"Error formatting script prompt: Missing key {e}. Check prompts.py and app.py alignment."
+                        )
+                        # Optionally add st.stop() here if this is critical
+                    except Exception as e:
+                        st.error(f"Error generating script: {e}")
+
+                    # --- Process Script ---
+                    if script:
+                        formatted_script = "\n\n".join(
+                            [
+                                line.strip()
+                                for line in script.split("\n")
+                                if line.strip()
+                            ]
+                        )
+                        st.session_state.generated_script = formatted_script
+                        st.session_state.script_generated = True
+                    else:
+                        # Error message was already shown in the except block if script generation failed
+                        # If script is None/empty without an exception, show a generic message
+                        if movie_name:
+                            st.warning(
+                                "Script generation returned empty. Try adjusting parameters or regenerating."
+                            )
+                        st.session_state.script_generated = False
+                else:
+                    # Error message was already shown in the except block if name generation failed
+                    # If name is None/empty without an exception, show a generic message
+                    st.warning(
+                        "Movie name generation returned empty. Please try again."
+                    )
 
         # Display the script if it exists
         if st.session_state.get("script_generated", False):
