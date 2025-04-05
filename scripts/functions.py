@@ -142,33 +142,6 @@ def save_movie_data(movie_name, script, output_dir="assets/data"):
     return movie_data_file  # Return file path for confirmation
 
 
-def get_ollama_models():
-    """
-    Lists the Ollama models installed on the system.
-
-    Returns:
-        list: A list of strings, where each string is the name of an installed Ollama model.
-              Returns an empty list if Ollama is not installed or no models are found.
-    """
-    try:
-        result = subprocess.run(
-            ["ollama", "list"], capture_output=True, text=True, check=True
-        )
-        models = []
-        for line in result.stdout.splitlines():
-            if line.strip():
-                parts = line.split()
-                if len(parts) > 0:
-                    models.append(parts[0].strip())
-        return models
-    except FileNotFoundError:
-        st.error("Ollama is not installed. Please install Ollama and try again.")
-        return []
-    except subprocess.CalledProcessError as e:
-        st.error(f"Error listing Ollama models: {e}")
-        return []
-
-
 def apply_background_music(audio_filepath):
     """Mix voice-over with background music, stretching music to match voice-over length.
 

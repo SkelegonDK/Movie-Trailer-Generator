@@ -18,90 +18,53 @@ def main():
     # Initialize configuration
     config = Config.load()
 
-    # Initialize mode in session state if not present
-    if "use_local_model" not in st.session_state:
-        st.session_state.use_local_model = False
-
     # Sidebar for model selection and mode
     st.sidebar.header("Model Settings")
 
-    # Mode toggle
-    st.session_state.use_local_model = st.sidebar.toggle(
-        "Ollama mode", value=st.session_state.use_local_model
-    )
+    # OpenRouter models (Now the only path)
+    st.sidebar.subheader("OpenRouter Model Selection")
+    # Get models and default from config
+    openrouter_models = config.openrouter_model_list
+    default_openrouter_model = config.openrouter_default_model
 
-    if st.session_state.use_local_model:
-        # Local Ollama models
-        st.sidebar.subheader("Local Model Selection")
-        ollama_models = functions.get_ollama_models()
-        if not ollama_models:
-            st.sidebar.error(
-                "No Ollama models found. Please install Ollama and pull a model."
-            )
-            st.sidebar.markdown(
-                "[Ollama Installation Instructions](https://ollama.com/)"
-            )
-            st.stop()
+    # Ensure the default model is in the list, handle potential None
+    if (
+        not default_openrouter_model
+        or default_openrouter_model not in openrouter_models
+    ):
+        # Fallback to the first model in the list if default is invalid or not set
+        if openrouter_models:
+            default_openrouter_model = openrouter_models[0]
         else:
-            default_model = (
-                "llama3.2:3b" if "llama3.2:3b" in ollama_models else ollama_models[0]
-            )
-            selected_model = st.sidebar.selectbox(
-                "Select Local Model",
-                ollama_models,
-                index=(
-                    ollama_models.index(default_model)
-                    if default_model in ollama_models
-                    else 0
-                ),
-            )
-            st.session_state.selected_model = selected_model
-    else:
-        # OpenRouter models
-        st.sidebar.subheader("OpenRouter Model Selection")
-        # Get models and default from config
-        openrouter_models = config.openrouter_model_list
-        default_openrouter_model = config.openrouter_default_model
-
-        # Ensure the default model is in the list, handle potential None
-        if (
-            not default_openrouter_model
-            or default_openrouter_model not in openrouter_models
-        ):
-            # Fallback to the first model in the list if default is invalid or not set
-            if openrouter_models:
-                default_openrouter_model = openrouter_models[0]
-            else:
-                # Handle case where model list is empty in config
-                st.sidebar.error(
-                    "No OpenRouter models configured. Please check config."
-                )
-                st.stop()
-
-        # Determine the index for the default model
-        default_index = openrouter_models.index(default_openrouter_model)
-
-        selected_model = st.sidebar.selectbox(
-            "Select OpenRouter Model",
-            openrouter_models,
-            index=default_index,
-        )
-        st.session_state.selected_model = selected_model
-
-        # Add model information dynamically
-        st.sidebar.markdown("**Available Configured Models**")
-        for model_name in openrouter_models:
-            st.sidebar.markdown(f"- `{model_name}`")
-
-        # Add API key instructions
-        # Check the key from the loaded config object
-        if not config.openrouter_api_key:
-            st.sidebar.error(
-                "OpenRouter API key not found. "
-                "Please configure it via environment variables or secrets.toml."
-            )
-            st.sidebar.markdown("[Get Free API Key](https://openrouter.ai/keys)")
+            # Handle case where model list is empty in config
+            st.sidebar.error("No OpenRouter models configured. Please check config.")
             st.stop()
+
+    # Determine the index for the default model
+    default_index = openrouter_models.index(default_openrouter_model)
+
+    selected_model = st.sidebar.selectbox(
+        "Select OpenRouter Model",
+        openrouter_models,
+        index=default_index,
+    )
+    # Store selected model directly
+    st.session_state.selected_model = selected_model
+
+    # Add model information dynamically
+    st.sidebar.markdown("**Available Configured Models**")
+    for model_name in openrouter_models:
+        st.sidebar.markdown(f"- `{model_name}`")
+
+    # Add API key instructions
+    # Check the key from the loaded config object
+    if not config.openrouter_api_key:
+        st.sidebar.error(
+            "OpenRouter API key not found. "
+            "Please configure it via environment variables or secrets.toml."
+        )
+        st.sidebar.markdown("[Get Free API Key](https://openrouter.ai/keys)")
+        st.stop()
 
     st.write("by Manuel Thomsen")
 
@@ -175,31 +138,12 @@ def main():
             st.session_state.generated_script = None
             st.session_state.movie_name = None
 
-            # --- Determine API parameters ---
-            api_key = None
-            base_url = None
-            model_name_for_generation = None
-
-            if st.session_state.use_local_model:
-                # Assume Ollama setup
-                # Get base URL from config or env var if available, else default
-                base_url = getattr(
-                    config,
-                    "ollama_base_url",
-                    os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-                )
-                # Ollama's OpenAI compatible endpoint often uses a placeholder key
-                api_key = getattr(
-                    config, "ollama_api_key", os.getenv("OLLAMA_API_KEY", "ollama")
-                )
-                # Get the specific local model name from session state
-                model_name_for_generation = st.session_state.selected_model
-            else:
-                # Use OpenRouter
-                base_url = "https://openrouter.ai/api/v1"
-                # Get API key from the loaded config object
-                api_key = config.openrouter_api_key
-                model_name_for_generation = st.session_state.selected_model
+            # Use OpenRouter (Now the only path)
+            base_url = "https://openrouter.ai/api/v1"
+            # Get API key from the loaded config object
+            api_key = config.openrouter_api_key
+            # Get selected model from session state (set earlier)
+            model_name_for_generation = st.session_state.selected_model
 
             # Basic validation of parameters
             if not api_key or not base_url or not model_name_for_generation:
@@ -343,14 +287,6 @@ def main():
                             )
                     else:
                         st.error("Failed to apply background music. Please try again.")
-
-                    with open(audio_with_music_path, "rb") as file:
-                        st.download_button(
-                            label="Download",
-                            data=file,
-                            file_name=os.path.basename(audio_with_music_path),
-                            mime="audio/mp3",
-                        )
                 else:
                     st.error("Failed to generate audio. Please try again.")
 

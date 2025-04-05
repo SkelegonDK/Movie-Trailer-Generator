@@ -31,40 +31,47 @@ Before you begin, you'll need to have Python installed on your computer. You can
     * Background music file: Place your trailer music in `assets/audio/trailer_music.mp3`
     * The background music will be automatically stretched to match the voice-over length and mixed at a lower volume
 
-4. **Install Ollama and the required model:**
+## API Keys
 
-    This project uses Ollama to generate the movie trailer script. Here's how to install it:
+This application requires API keys for external services:
 
-    * Go to the [Ollama website](https://ollama.com/) and follow the installation instructions for your operating system.
-    * Once Ollama is installed, open your terminal (Mac) or Command Prompt (Windows) and run the following command to download the required model:
+### 1. ElevenLabs API Key
 
-        ```bash
-        ollama pull llama3.2:3b
-        ```
-
-        This command downloads the `llama3.2:3b` model, which is used to generate the movie trailer script.
-
-## ElevenLabs API Key
-
-To generate voiceovers, you'll need an API key from ElevenLabs. Here's how to get one:
+To generate voiceovers, you'll need an API key from ElevenLabs.
 
 1. Go to the [ElevenLabs website](https://elevenlabs.io/) and create an account.
 2. Once you're logged in, go to your profile settings.
 3. You'll find your API key on the profile page.
 
+### 2. OpenRouter API Key
+
+To generate the movie title and script, you'll need an API key from OpenRouter.
+They offer free credits and access to various models.
+
+1. Go to the [OpenRouter website](https://openrouter.ai/keys) and sign up/log in.
+2. Create a new API key.
+
 ## API Key Management
 
-To securely store your ElevenLabs API key, follow these steps:
+To securely store your API keys, follow these steps:
 
 1. Create a `.streamlit` directory in the root of your project, if one doesn't exist yet.
 2. Inside the `.streamlit` directory, create a file named `secrets.toml`.
-3. Add your API key to the `secrets.toml` file like this:
+3. Add your API keys to the `secrets.toml` file like this:
 
 ```toml
-ELEVENLABS_API_KEY = "YOUR_API_KEY"
+ELEVENLABS_API_KEY = "YOUR_ELEVENLABS_KEY"
+OPENROUTER_API_KEY = "YOUR_OPENROUTER_KEY"
+
+# Optional: Override default OpenRouter models
+# openrouter_default_model = "mistralai/mistral-small-3.1-24b-instruct:free"
+# openrouter_model_list = [
+#   "mistralai/mistral-small-3.1-24b-instruct:free",
+#   "google/gemma-3-4b-it:free"
+# ]
 ```
 
-Replace `"YOUR_API_KEY"` with your actual ElevenLabs API key.
+Replace `"YOUR_ELEVENLABS_KEY"` and `"YOUR_OPENROUTER_KEY"` with your actual API keys. You can also optionally override the default OpenRouter model and the list of available models here, as shown in the commented-out example.
 
 ## Usage
 
