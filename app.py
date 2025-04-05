@@ -20,14 +20,14 @@ def main():
 
     # Initialize mode in session state if not present
     if "use_local_model" not in st.session_state:
-        st.session_state.use_local_model = True
+        st.session_state.use_local_model = False
 
     # Sidebar for model selection and mode
     st.sidebar.header("Model Settings")
 
     # Mode toggle
     st.session_state.use_local_model = st.sidebar.toggle(
-        "Use Local Models", value=st.session_state.use_local_model
+        "Ollama mode", value=st.session_state.use_local_model
     )
 
     if st.session_state.use_local_model:
@@ -59,36 +59,46 @@ def main():
     else:
         # OpenRouter models
         st.sidebar.subheader("OpenRouter Model Selection")
-        openrouter_models = [
-            "deepseek/deepseek-chat-v3-0324:free",
-            "mistralai/mistral-small-3.1-24b-instruct:free",
-            "google/gemma-3-4b-it:free",
-        ]
-        default_openrouter_model = "deepseek/deepseek-chat-v3-0324:free"
+        # Get models and default from config
+        openrouter_models = config.openrouter_model_list
+        default_openrouter_model = config.openrouter_default_model
+
+        # Ensure the default model is in the list, handle potential None
+        if (
+            not default_openrouter_model
+            or default_openrouter_model not in openrouter_models
+        ):
+            # Fallback to the first model in the list if default is invalid or not set
+            if openrouter_models:
+                default_openrouter_model = openrouter_models[0]
+            else:
+                # Handle case where model list is empty in config
+                st.sidebar.error(
+                    "No OpenRouter models configured. Please check config."
+                )
+                st.stop()
+
+        # Determine the index for the default model
+        default_index = openrouter_models.index(default_openrouter_model)
+
         selected_model = st.sidebar.selectbox(
             "Select OpenRouter Model",
             openrouter_models,
-            index=openrouter_models.index(default_openrouter_model),
+            index=default_index,
         )
         st.session_state.selected_model = selected_model
 
-        # Add model information
-        st.sidebar.markdown(
-            """
-        **Available Free Models**
-        - Gemma 7B Instruct: Best overall performance
-        - Gemma 2B Instruct: Fastest response
-        - Mistral 7B: Good balance of speed and quality
-        - Nous Capybara 7B: Creative responses
-        - OpenChat 7B: Good for conversation
-        """
-        )
+        # Add model information dynamically
+        st.sidebar.markdown("**Available Configured Models**")
+        for model_name in openrouter_models:
+            st.sidebar.markdown(f"- `{model_name}`")
 
         # Add API key instructions
-        if not st.secrets.get("OPENROUTER_API_KEY"):
+        # Check the key from the loaded config object
+        if not config.openrouter_api_key:
             st.sidebar.error(
-                "OpenRouter API key not found in secrets. "
-                "Please add your API key to the secrets."
+                "OpenRouter API key not found. "
+                "Please configure it via environment variables or secrets.toml."
             )
             st.sidebar.markdown("[Get Free API Key](https://openrouter.ai/keys)")
             st.stop()
@@ -170,8 +180,6 @@ def main():
             base_url = None
             model_name_for_generation = None
 
-            config = Config.load()
-
             if st.session_state.use_local_model:
                 # Assume Ollama setup
                 # Get base URL from config or env var if available, else default
@@ -189,6 +197,7 @@ def main():
             else:
                 # Use OpenRouter
                 base_url = "https://openrouter.ai/api/v1"
+                # Get API key from the loaded config object
                 api_key = config.openrouter_api_key
                 model_name_for_generation = st.session_state.selected_model
 
@@ -335,7 +344,6 @@ def main():
                     else:
                         st.error("Failed to apply background music. Please try again.")
 
-                    st.audio(audio_with_music_path, format="audio/mp3")
                     with open(audio_with_music_path, "rb") as file:
                         st.download_button(
                             label="Download",
@@ -351,146 +359,6 @@ def main():
         st.info(
             "👉 Check out the Audio Browser page to view all generated audio files!"
         )
-
-
-def generate_movie_name_with_openrouter(genre, model):
-    """Generate a movie name using the OpenRouter API"""
-    try:
-        config = Config.load()
-        client = OpenRouterClient(config)
-
-        # Check API health first
-        if not client.check_health():
-            st.error("⚠️ OpenRouter API is currently unavailable")
-            st.info(
-                "Troubleshooting tips:\n"
-                "1. Check if api.openrouter.ai is accessible\n"
-                "2. Verify your API key is valid\n"
-                "3. Try switching to local models temporarily"
-            )
-            return None
-
-        # Format the prompt with all required elements
-        prompt = prompts.MOVIE_TITLE_USER_PROMPT.format(
-            genre=genre,
-            main_character=st.session_state.selected_points["Main Character"],
-            setting=st.session_state.selected_points["Setting"],
-            conflict=st.session_state.selected_points["Conflict"],
-            plot_twist=st.session_state.selected_points["Plot Twist"],
-        )
-
-        title = client.generate_text(
-            prompt=prompt,
-            model=model,
-            system_prompt=prompts.MOVIE_TITLE_SYSTEM_PROMPT,
-            temperature=0.7,
-            max_tokens=100,
-        )
-
-        if not title:
-            st.error("Received empty response from API")
-            return None
-
-        return title
-
-    except ConnectionError as e:
-        st.error(
-            "⚠️ Connection Error: Unable to reach the API server. Please check your internet connection."
-        )
-        st.info(
-            "Troubleshooting tips:\n"
-            "1. Check your internet connection\n"
-            "2. Verify that api.openrouter.ai is accessible\n"
-            "3. Try again in a few moments"
-        )
-        st.write(f"Technical details: {str(e)}")
-        return None
-
-    except Timeout as e:
-        st.error("⚠️ Request Timeout: The API server took too long to respond.")
-        st.info(
-            "The server might be experiencing high load. Please try again in a few moments."
-        )
-        st.write(f"Technical details: {str(e)}")
-        return None
-
-    except RequestException as e:
-        st.error(
-            "⚠️ API Error: Something went wrong while communicating with the server."
-        )
-        st.info("This could be a temporary issue. Please try again.")
-        st.write(f"Technical details: {str(e)}")
-        return None
-
-
-def generate_script_with_openrouter(selected_points, movie_name):
-    """Generate a movie trailer script using the OpenRouter API"""
-    try:
-        config = Config.load()
-        client = OpenRouterClient(config)
-
-        # Check API health first
-        if not client.check_health():
-            st.error("⚠️ OpenRouter API is currently unavailable")
-            st.info(
-                "Troubleshooting tips:\n"
-                "1. Check if api.openrouter.ai is accessible\n"
-                "2. Verify your API key is valid\n"
-                "3. Try switching to local models temporarily"
-            )
-            return None
-
-        prompt = prompts.SCRIPT_USER_PROMPT.format(
-            title=movie_name,
-            genre=selected_points["Genre"],
-            setting=selected_points["Setting"],
-            character=selected_points["Main Character"],
-            conflict=selected_points["Conflict"],
-            plot_twist=selected_points["Plot Twist"],
-        )
-
-        script = client.generate_text(
-            prompt=prompt,
-            model=st.session_state.selected_model,
-            system_prompt=prompts.SCRIPT_SYSTEM_PROMPT,
-            temperature=0.7,
-            max_tokens=200,
-        )
-
-        if not script:
-            st.error("Received empty script from API")
-            return None
-
-        return script
-
-    except ConnectionError as e:
-        st.error(
-            "⚠️ Connection Error: Unable to reach the API server. Please check your internet connection."
-        )
-        st.info(
-            "Troubleshooting tips:\n"
-            "1. Check your internet connection\n"
-            "2. Verify that api.openrouter.ai is accessible\n"
-            "3. Try again in a few moments"
-        )
-        st.write(f"Technical details: {str(e)}")
-        return None
-
-    except Timeout as e:
-        st.error("⚠️ Request Timeout: The API server took too long to respond.")
-        st.info(
-            "The server might be experiencing high load. Please try again in a few moments."
-        )
-        st.write(f"Technical details: {str(e)}")
-        return None
-
-    except RequestException as e:
-        st.error(
-            "⚠️ API Error: Something went wrong while communicating with the server."
-        )
-        st.info("This could be a temporary issue. Please try again.")
-        st.write(f"Technical details: {str(e)}")
-        return None
 
 
 if __name__ == "__main__":
