@@ -7,6 +7,8 @@ import subprocess
 import requests
 import streamlit as st
 from scripts import prompts
+import time
+from datetime import timedelta
 
 
 try:
@@ -70,6 +72,18 @@ def card(category, option, color):
 
 
 def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
+    """
+    Generates audio from text using the ElevenLabs Text-to-Speech API.
+
+    Args:
+        text (str): The text content to convert to speech.
+        voice_id (str, optional): The ElevenLabs voice ID to use.
+                                  Defaults to "FF7KdobWPaiR0vkcALHF".
+
+    Returns:
+        Optional[bytes]: The generated audio content as bytes in MP3 format,
+                         or None if an error occurred during generation.
+    """
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {
         "Accept": "audio/mpeg",
@@ -87,7 +101,9 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
         response.raise_for_status()
         return response.content
     except requests.exceptions.RequestException as e:
-        st.error(f"Error generating audio: {str(e)}")
+        st.error(
+            f"Error generating audio via ElevenLabs: {str(e)}. Check API key and network."
+        )
         return None
 
 
@@ -179,11 +195,61 @@ def apply_background_music(audio_filepath):
             voice_over.overlay(stretched, position=0).export(output_path, format="mp3")
             return output_path
         else:
-            st.error(f"Audio file not found: {audio_filepath}")
+            st.error(f"Audio file not found during mixing: {audio_filepath}")
             return None
     except Exception as e:
-        st.error(f"Error applying background music: {str(e)}")
+        st.error(
+            f"Error applying background music to '{os.path.basename(audio_filepath)}': {str(e)}"
+        )
         return None
+
+
+def cleanup_old_audio_files(directory="generated_audio", max_age_hours=24):
+    """
+    Deletes MP3 files older than a specified number of hours from a directory.
+
+    Args:
+        directory (str): The directory to clean up. Defaults to "generated_audio".
+        max_age_hours (int): The maximum age of files in hours. Defaults to 24.
+
+    Returns:
+        int: The number of files deleted.
+    """
+    if not os.path.isdir(directory):
+        # st.warning(f"Cleanup directory '{directory}' not found.") # Optional warning
+        return 0  # Indicate no files were deleted
+
+    now = time.time()
+    cutoff = now - timedelta(hours=max_age_hours).total_seconds()
+    deleted_count = 0
+    files_to_check = []
+    try:
+        files_to_check = os.listdir(directory)
+    except OSError as e:
+        st.error(f"Error accessing directory {directory} for cleanup: {e}")
+        return 0  # Cannot proceed
+
+    for filename in files_to_check:
+        if not filename.endswith(".mp3"):  # Only target mp3 files
+            continue
+        filepath = os.path.join(directory, filename)
+        try:
+            if os.path.isfile(filepath):
+                file_mod_time = os.path.getmtime(filepath)
+                if file_mod_time < cutoff:
+                    os.remove(filepath)
+                    deleted_count += 1
+                    # Optionally log deletion: print(f"Deleted old audio file: {filepath}")
+        except FileNotFoundError:
+            # File might have been deleted by another process between listdir and check, ignore.
+            pass
+        except OSError as e:
+            st.warning(f"Error deleting file {filepath}: {e}")  # Warn but continue
+        except Exception as e:
+            # Catch unexpected errors during file processing
+            st.warning(f"Unexpected error processing file {filepath} for cleanup: {e}")
+
+    return deleted_count
 
 
 # Add other utility functions as needed

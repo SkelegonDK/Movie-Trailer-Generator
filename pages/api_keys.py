@@ -7,6 +7,15 @@ st.title("API Key Management")
 
 # Function to create secrets.toml if it doesn't exist
 def create_secrets_file():
+    """
+    Ensures the .streamlit/secrets.toml file exists.
+
+    Creates the .streamlit directory if it doesn't exist.
+    Creates the secrets.toml file with a header comment if it doesn't exist.
+
+    Returns:
+        bool: True if the file was newly created, False otherwise.
+    """
     secrets_path = os.path.join(".streamlit", "secrets.toml")
     if not os.path.exists(".streamlit"):
         os.makedirs(".streamlit")
@@ -22,6 +31,19 @@ def create_secrets_file():
 
 # Function to save API keys to secrets.toml
 def save_api_keys(elevenlabs_key=None, openrouter_key=None):
+    """
+    Saves provided API keys to the .streamlit/secrets.toml file.
+
+    Reads existing secrets, updates them with the provided keys (if any),
+    and writes the complete set of secrets back to the file.
+
+    Args:
+        elevenlabs_key (Optional[str]): The ElevenLabs API key to save.
+        openrouter_key (Optional[str]): The OpenRouter API key to save.
+
+    Returns:
+        bool: True if the keys were saved successfully.
+    """
     secrets_path = os.path.join(".streamlit", "secrets.toml")
     current_secrets = {}
 

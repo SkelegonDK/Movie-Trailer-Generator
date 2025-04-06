@@ -12,6 +12,15 @@ from scripts import functions, prompts
 
 
 def main():
+    """
+    Runs the main Streamlit application for the Movie Trailer Generator.
+
+    Sets up the page configuration, title, sidebar for model selection,
+    API key checks, and lays out the UI elements including selection cards,
+    generation buttons, script display, and audio playback/download.
+    Handles the logic for generating movie names and scripts using the
+    selected LLM via OpenRouter and generating voice-overs using ElevenLabs.
+    """
     st.set_page_config(page_title="Movie Trailer Generator", layout="wide")
     st.title("Movie Trailer Generator")
 
