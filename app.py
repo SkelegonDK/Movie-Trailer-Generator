@@ -1,9 +1,5 @@
 import os
 import random
-import json
-import requests
-from scripts.openrouter_client import OpenRouterClient
-from requests.exceptions import RequestException, ConnectionError, Timeout
 from config import Config
 from utils.llm_api import call_llm
 
@@ -73,7 +69,7 @@ def main():
             "Please configure it via environment variables or secrets.toml."
         )
         st.sidebar.markdown("[Get Free API Key](https://openrouter.ai/keys)")
-        st.stop()
+        # st.stop() # Removed stop to allow main page rendering
 
     st.write("by Manuel Thomsen")
 
@@ -142,7 +138,16 @@ def main():
 
     # Main content column
     with main_col:
-        if st.button("Generate Voice-Over Script"):
+        # Check for API key presence before showing the generation button
+        api_key_present = bool(config.openrouter_api_key)
+
+        if not api_key_present:
+            st.warning(
+                "OpenRouter API key is missing. Please add it via the 'API Key Management' page (sidebar) to enable generation."
+            )
+
+        # Disable button if API key is not present
+        if st.button("Generate Voice-Over Script", disabled=not api_key_present):
             st.session_state.script_generated = False
             st.session_state.generated_script = None
             st.session_state.movie_name = None
