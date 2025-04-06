@@ -62,15 +62,39 @@ def main():
         st.sidebar.markdown(f"- `{model_name}`")
 
     # Add API key instructions
-    # Check the key from the loaded config object
-    if not config.openrouter_api_key:
+    st.sidebar.markdown("--- API Keys ---")  # Separator
+
+    # --- OpenRouter Key Check ---
+    openrouter_key_present = bool(config.openrouter_api_key)
+    if not openrouter_key_present:
         st.sidebar.error(
-            "OpenRouter API key not found. "
-            "Please configure it via environment variables or secrets.toml."
+            "OpenRouter API key not found. Please configure it via secrets.toml or environment variable."
         )
         st.sidebar.markdown("[Get Free API Key](https://openrouter.ai/keys)")
-        # st.stop() # Removed stop to allow main page rendering
+    else:
+        st.sidebar.success("OpenRouter API Key: ✅ Loaded")
 
+    # --- ElevenLabs Key Check ---
+    elevenlabs_key_present = bool(config.elevenlabs_api_key)
+    if not elevenlabs_key_present:
+        st.sidebar.error(
+            "ElevenLabs API key not found. Please configure it via secrets.toml or environment variable."
+        )
+        st.sidebar.markdown("[Get API Key](https://elevenlabs.io/)")
+    else:
+        st.sidebar.success("ElevenLabs API Key: ✅ Loaded")
+
+    # Check if BOTH keys are present before allowing generation steps
+    all_keys_present = openrouter_key_present and elevenlabs_key_present
+
+    # Optional: Stop the app entirely if keys are missing (more restrictive)
+    # if not all_keys_present:
+    #     st.error("Required API keys are missing. Please configure them.")
+    #     st.stop()
+
+    st.sidebar.markdown("--- Settings End ---")  # Another separator
+
+    # -- Main App Logic Starts --
     st.write("by Manuel Thomsen")
 
     trailer_points = functions.get_trailer_points()
@@ -139,15 +163,13 @@ def main():
     # Main content column
     with main_col:
         # Check for API key presence before showing the generation button
-        api_key_present = bool(config.openrouter_api_key)
-
-        if not api_key_present:
+        if not all_keys_present:
             st.warning(
-                "OpenRouter API key is missing. Please add it via the 'API Key Management' page (sidebar) to enable generation."
+                "One or more required API keys (OpenRouter, ElevenLabs) are missing. Please add them via the 'API Key Management' page or secrets.toml to enable full functionality."
             )
 
         # Disable button if API key is not present
-        if st.button("Generate Voice-Over Script", disabled=not api_key_present):
+        if st.button("Generate Voice-Over Script", disabled=not all_keys_present):
             st.session_state.script_generated = False
             st.session_state.generated_script = None
             st.session_state.movie_name = None
@@ -273,36 +295,49 @@ def main():
                 height=200,
             )
 
-            if st.button("Generate Voice over"):
-                with st.spinner("Generating audio..."):
-                    audio = functions.generate_audio_with_elevenlabs(
-                        st.session_state.generated_script
-                    )
-                if audio:
-                    # Save the audio file
-                    audio_file_path = functions.save_audio_file(
-                        audio,
-                        st.session_state.selected_points,
-                        st.session_state.movie_name,
-                    )
+            # --- Generate Audio Section ---
+            if st.button(
+                "Generate Voice over", disabled=not elevenlabs_key_present
+            ):  # Also disable if ElevenLabs key missing
+                if not elevenlabs_key_present:
+                    st.error("Cannot generate audio: ElevenLabs API key is missing.")
+                elif not st.session_state.generated_script:
+                    st.warning("Please generate a script first.")
+                else:
+                    with st.spinner("Generating audio..."):
+                        # Pass the key directly from config if needed by the function
+                        # Alternatively, ensure the function reads from st.secrets or config
+                        audio = functions.generate_audio_with_elevenlabs(
+                            st.session_state.generated_script,
+                            # voice_id="...") # Optional: specify voice ID if needed
+                        )
+                    if audio:
+                        # Save the audio file
+                        audio_file_path = functions.save_audio_file(
+                            audio,
+                            st.session_state.selected_points,
+                            st.session_state.movie_name,
+                        )
 
-                    # Apply background music
-                    audio_with_music_path = functions.apply_background_music(
-                        audio_file_path
-                    )
-                    if audio_with_music_path:
-                        st.audio(audio_with_music_path, format="audio/mp3")
-                        with open(audio_with_music_path, "rb") as file:
-                            st.download_button(
-                                label="Download",
-                                data=file,
-                                file_name=os.path.basename(audio_with_music_path),
-                                mime="audio/mp3",
+                        # Apply background music
+                        audio_with_music_path = functions.apply_background_music(
+                            audio_file_path
+                        )
+                        if audio_with_music_path:
+                            st.audio(audio_with_music_path, format="audio/mp3")
+                            with open(audio_with_music_path, "rb") as file:
+                                st.download_button(
+                                    label="Download",
+                                    data=file,
+                                    file_name=os.path.basename(audio_with_music_path),
+                                    mime="audio/mp3",
+                                )
+                        else:
+                            st.error(
+                                "Failed to apply background music. Please try again."
                             )
                     else:
-                        st.error("Failed to apply background music. Please try again.")
-                else:
-                    st.error("Failed to generate audio. Please try again.")
+                        st.error("Failed to generate audio. Please try again.")
 
         # Note about Audio Browser
         st.markdown("---")
