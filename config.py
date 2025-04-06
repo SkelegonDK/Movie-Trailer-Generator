@@ -9,6 +9,7 @@ class Config:
     """Configuration class for the application."""
 
     openrouter_api_key: Optional[str] = None
+    elevenlabs_api_key: Optional[str] = None
     # Deprecated: Use openrouter_default_model instead
     openrouter_model: Optional[str] = None
     background_music_path: str = "assets/audio/trailer_music.mp3"
@@ -37,6 +38,13 @@ class Config:
         elif hasattr(st.secrets, "openrouter_api_key"):
             config_data["openrouter_api_key"] = st.secrets.openrouter_api_key
 
+        # --- ElevenLabs API Key ---
+        elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+        if elevenlabs_key:
+            config_data["elevenlabs_api_key"] = elevenlabs_key
+        elif hasattr(st.secrets, "ELEVENLABS_API_KEY"):
+            config_data["elevenlabs_api_key"] = st.secrets.ELEVENLABS_API_KEY
+
         # --- Model List ---
         # Load from secrets if available
         if hasattr(st.secrets, "openrouter_model_list") and isinstance(
@@ -59,6 +67,10 @@ class Config:
     def is_valid(self) -> bool:
         """Check if the configuration is valid (primarily API key)."""
         return bool(self.openrouter_api_key)
+
+    def are_all_keys_set(self) -> bool:
+        """Check if all required API keys are set."""
+        return bool(self.openrouter_api_key) and bool(self.elevenlabs_api_key)
 
 
 # Global configuration instance (Consider removing/refactoring)
