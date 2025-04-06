@@ -92,8 +92,6 @@ def main():
     #     st.error("Required API keys are missing. Please configure them.")
     #     st.stop()
 
-    st.sidebar.markdown("--- Settings End ---")  # Another separator
-
     # -- Main App Logic Starts --
     st.write("by Manuel Thomsen")
 
