@@ -1,9 +1,5 @@
 import os
 import random
-import json
-import requests
-from scripts.openrouter_client import OpenRouterClient
-from requests.exceptions import RequestException, ConnectionError, Timeout
 from config import Config
 from utils.llm_api import call_llm
 
@@ -12,97 +8,91 @@ from scripts import functions, prompts
 
 
 def main():
+    """
+    Runs the main Streamlit application for the Movie Trailer Generator.
+
+    Sets up the page configuration, title, sidebar for model selection,
+    API key checks, and lays out the UI elements including selection cards,
+    generation buttons, script display, and audio playback/download.
+    Handles the logic for generating movie names and scripts using the
+    selected LLM via OpenRouter and generating voice-overs using ElevenLabs.
+    """
     st.set_page_config(page_title="Movie Trailer Generator", layout="wide")
     st.title("Movie Trailer Generator")
 
     # Initialize configuration
     config = Config.load()
 
-    # Initialize mode in session state if not present
-    if "use_local_model" not in st.session_state:
-        st.session_state.use_local_model = False
-
     # Sidebar for model selection and mode
     st.sidebar.header("Model Settings")
 
-    # Mode toggle
-    st.session_state.use_local_model = st.sidebar.toggle(
-        "Ollama mode", value=st.session_state.use_local_model
-    )
+    # OpenRouter models (Now the only path)
+    st.sidebar.subheader("OpenRouter Model Selection")
+    # Get models and default from config
+    openrouter_models = config.openrouter_model_list
+    default_openrouter_model = config.openrouter_default_model
 
-    if st.session_state.use_local_model:
-        # Local Ollama models
-        st.sidebar.subheader("Local Model Selection")
-        ollama_models = functions.get_ollama_models()
-        if not ollama_models:
-            st.sidebar.error(
-                "No Ollama models found. Please install Ollama and pull a model."
-            )
-            st.sidebar.markdown(
-                "[Ollama Installation Instructions](https://ollama.com/)"
-            )
-            st.stop()
+    # Ensure the default model is in the list, handle potential None
+    if (
+        not default_openrouter_model
+        or default_openrouter_model not in openrouter_models
+    ):
+        # Fallback to the first model in the list if default is invalid or not set
+        if openrouter_models:
+            default_openrouter_model = openrouter_models[0]
         else:
-            default_model = (
-                "llama3.2:3b" if "llama3.2:3b" in ollama_models else ollama_models[0]
-            )
-            selected_model = st.sidebar.selectbox(
-                "Select Local Model",
-                ollama_models,
-                index=(
-                    ollama_models.index(default_model)
-                    if default_model in ollama_models
-                    else 0
-                ),
-            )
-            st.session_state.selected_model = selected_model
-    else:
-        # OpenRouter models
-        st.sidebar.subheader("OpenRouter Model Selection")
-        # Get models and default from config
-        openrouter_models = config.openrouter_model_list
-        default_openrouter_model = config.openrouter_default_model
-
-        # Ensure the default model is in the list, handle potential None
-        if (
-            not default_openrouter_model
-            or default_openrouter_model not in openrouter_models
-        ):
-            # Fallback to the first model in the list if default is invalid or not set
-            if openrouter_models:
-                default_openrouter_model = openrouter_models[0]
-            else:
-                # Handle case where model list is empty in config
-                st.sidebar.error(
-                    "No OpenRouter models configured. Please check config."
-                )
-                st.stop()
-
-        # Determine the index for the default model
-        default_index = openrouter_models.index(default_openrouter_model)
-
-        selected_model = st.sidebar.selectbox(
-            "Select OpenRouter Model",
-            openrouter_models,
-            index=default_index,
-        )
-        st.session_state.selected_model = selected_model
-
-        # Add model information dynamically
-        st.sidebar.markdown("**Available Configured Models**")
-        for model_name in openrouter_models:
-            st.sidebar.markdown(f"- `{model_name}`")
-
-        # Add API key instructions
-        # Check the key from the loaded config object
-        if not config.openrouter_api_key:
-            st.sidebar.error(
-                "OpenRouter API key not found. "
-                "Please configure it via environment variables or secrets.toml."
-            )
-            st.sidebar.markdown("[Get Free API Key](https://openrouter.ai/keys)")
+            # Handle case where model list is empty in config
+            st.sidebar.error("No OpenRouter models configured. Please check config.")
             st.stop()
 
+    # Determine the index for the default model
+    default_index = openrouter_models.index(default_openrouter_model)
+
+    selected_model = st.sidebar.selectbox(
+        "Select OpenRouter Model",
+        openrouter_models,
+        index=default_index,
+    )
+    # Store selected model directly
+    st.session_state.selected_model = selected_model
+
+    # Add model information dynamically
+    st.sidebar.markdown("**Available Configured Models**")
+    for model_name in openrouter_models:
+        st.sidebar.markdown(f"- `{model_name}`")
+
+    # Add API key instructions
+    st.sidebar.markdown("--- API Keys ---")  # Separator
+
+    # --- OpenRouter Key Check ---
+    openrouter_key_present = bool(config.openrouter_api_key)
+    if not openrouter_key_present:
+        st.sidebar.error(
+            "OpenRouter API key not found. Please configure it via secrets.toml or environment variable."
+        )
+        st.sidebar.markdown("[Get Free API Key](https://openrouter.ai/keys)")
+    else:
+        st.sidebar.success("OpenRouter API Key: ✅ Loaded")
+
+    # --- ElevenLabs Key Check ---
+    elevenlabs_key_present = bool(config.elevenlabs_api_key)
+    if not elevenlabs_key_present:
+        st.sidebar.error(
+            "ElevenLabs API key not found. Please configure it via secrets.toml or environment variable."
+        )
+        st.sidebar.markdown("[Get API Key](https://elevenlabs.io/)")
+    else:
+        st.sidebar.success("ElevenLabs API Key: ✅ Loaded")
+
+    # Check if BOTH keys are present before allowing generation steps
+    all_keys_present = openrouter_key_present and elevenlabs_key_present
+
+    # Optional: Stop the app entirely if keys are missing (more restrictive)
+    # if not all_keys_present:
+    #     st.error("Required API keys are missing. Please configure them.")
+    #     st.stop()
+
+    # -- Main App Logic Starts --
     st.write("by Manuel Thomsen")
 
     trailer_points = functions.get_trailer_points()
@@ -170,36 +160,24 @@ def main():
 
     # Main content column
     with main_col:
-        if st.button("Generate Voice-Over Script"):
+        # Check for API key presence before showing the generation button
+        if not all_keys_present:
+            st.warning(
+                "One or more required API keys (OpenRouter, ElevenLabs) are missing. Please add them via the 'API Key Management' page or secrets.toml to enable full functionality."
+            )
+
+        # Disable button if API key is not present
+        if st.button("Generate Voice-Over Script", disabled=not all_keys_present):
             st.session_state.script_generated = False
             st.session_state.generated_script = None
             st.session_state.movie_name = None
 
-            # --- Determine API parameters ---
-            api_key = None
-            base_url = None
-            model_name_for_generation = None
-
-            if st.session_state.use_local_model:
-                # Assume Ollama setup
-                # Get base URL from config or env var if available, else default
-                base_url = getattr(
-                    config,
-                    "ollama_base_url",
-                    os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-                )
-                # Ollama's OpenAI compatible endpoint often uses a placeholder key
-                api_key = getattr(
-                    config, "ollama_api_key", os.getenv("OLLAMA_API_KEY", "ollama")
-                )
-                # Get the specific local model name from session state
-                model_name_for_generation = st.session_state.selected_model
-            else:
-                # Use OpenRouter
-                base_url = "https://openrouter.ai/api/v1"
-                # Get API key from the loaded config object
-                api_key = config.openrouter_api_key
-                model_name_for_generation = st.session_state.selected_model
+            # Use OpenRouter (Now the only path)
+            base_url = "https://openrouter.ai/api/v1"
+            # Get API key from the loaded config object
+            api_key = config.openrouter_api_key
+            # Get selected model from session state (set earlier)
+            model_name_for_generation = st.session_state.selected_model
 
             # Basic validation of parameters
             if not api_key or not base_url or not model_name_for_generation:
@@ -315,44 +293,52 @@ def main():
                 height=200,
             )
 
-            if st.button("Generate Voice over"):
-                with st.spinner("Generating audio..."):
-                    audio = functions.generate_audio_with_elevenlabs(
-                        st.session_state.generated_script
-                    )
-                if audio:
-                    # Save the audio file
-                    audio_file_path = functions.save_audio_file(
-                        audio,
-                        st.session_state.selected_points,
-                        st.session_state.movie_name,
-                    )
+            # --- Generate Audio Section ---
+            if st.button("Generate Voice over", disabled=not elevenlabs_key_present):
+                if not elevenlabs_key_present:
+                    st.error("Cannot generate audio: ElevenLabs API key is missing.")
+                elif not st.session_state.generated_script:
+                    st.warning("Please generate a script first.")
+                else:
+                    # Set the voice generation request flag
+                    st.session_state.voice_generation_requested = True
 
-                    # Apply background music
-                    audio_with_music_path = functions.apply_background_music(
-                        audio_file_path
-                    )
-                    if audio_with_music_path:
-                        st.audio(audio_with_music_path, format="audio/mp3")
-                        with open(audio_with_music_path, "rb") as file:
-                            st.download_button(
-                                label="Download",
-                                data=file,
-                                file_name=os.path.basename(audio_with_music_path),
-                                mime="audio/mp3",
+                    with st.spinner("Generating audio..."):
+                        # Pass the key directly from config if needed by the function
+                        audio = functions.generate_audio_with_elevenlabs(
+                            st.session_state.generated_script,
+                        )
+
+                        # Reset the request flag after generation
+                        st.session_state.voice_generation_requested = False
+
+                    if audio:
+                        # Save the audio file
+                        audio_file_path = functions.save_audio_file(
+                            audio,
+                            st.session_state.selected_points,
+                            st.session_state.movie_name,
+                        )
+
+                        # Apply background music
+                        audio_with_music_path = functions.apply_background_music(
+                            audio_file_path
+                        )
+                        if audio_with_music_path:
+                            st.audio(audio_with_music_path, format="audio/mp3")
+                            with open(audio_with_music_path, "rb") as file:
+                                st.download_button(
+                                    label="Download",
+                                    data=file,
+                                    file_name=os.path.basename(audio_with_music_path),
+                                    mime="audio/mp3",
+                                )
+                        else:
+                            st.error(
+                                "Failed to apply background music. Please try again."
                             )
                     else:
-                        st.error("Failed to apply background music. Please try again.")
-
-                    with open(audio_with_music_path, "rb") as file:
-                        st.download_button(
-                            label="Download",
-                            data=file,
-                            file_name=os.path.basename(audio_with_music_path),
-                            mime="audio/mp3",
-                        )
-                else:
-                    st.error("Failed to generate audio. Please try again.")
+                        st.error("Failed to generate audio. Please try again.")
 
         # Note about Audio Browser
         st.markdown("---")

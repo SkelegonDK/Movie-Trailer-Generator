@@ -235,6 +235,7 @@ def test_script_generation_prompt_formatting(
 
 @pytest.fixture
 def client(mock_config, mock_dns):
+    """Provides an instance of OpenRouterClient with mocked config and DNS."""
     return OpenRouterClient()
 
 
