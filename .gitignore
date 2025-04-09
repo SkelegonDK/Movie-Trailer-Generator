@@ -166,3 +166,4 @@ cython_debug/
 .DS_Store
 *.png
 .cursorrules
+/node_modules
