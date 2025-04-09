@@ -9,6 +9,7 @@ import streamlit as st
 from scripts import prompts
 import time
 from datetime import timedelta
+import hashlib
 
 
 try:
@@ -74,6 +75,7 @@ def card(category, option, color):
 def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     """
     Generates audio from text using the ElevenLabs Text-to-Speech API.
+    Includes caching and request tracking to prevent duplicate API calls.
 
     Args:
         text (str): The text content to convert to speech.
@@ -84,6 +86,27 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
         Optional[bytes]: The generated audio content as bytes in MP3 format,
                          or None if an error occurred during generation.
     """
+    # Check if voice generation is requested
+    if not st.session_state.get("voice_generation_requested", False):
+        return None
+
+    # Check for API key
+    if not st.secrets.get("ELEVENLABS_API_KEY"):
+        st.error(
+            "ElevenLabs API key not found. Please configure it via secrets.toml or environment variable."
+        )
+        return None
+
+    # Generate cache key based on text and voice_id
+    cache_key = hashlib.md5(f"{text}{voice_id}".encode()).hexdigest()
+
+    # Check if we have this audio cached
+    if "audio_cache" not in st.session_state:
+        st.session_state.audio_cache = {}
+
+    if cache_key in st.session_state.audio_cache:
+        return st.session_state.audio_cache[cache_key]
+
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {
         "Accept": "audio/mpeg",
@@ -99,7 +122,12 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     try:
         response = requests.post(url, json=data, headers=headers, timeout=60)
         response.raise_for_status()
-        return response.content
+        audio_content = response.content
+
+        # Cache the generated audio
+        st.session_state.audio_cache[cache_key] = audio_content
+
+        return audio_content
     except requests.exceptions.RequestException as e:
         st.error(
             f"Error generating audio via ElevenLabs: {str(e)}. Check API key and network."
