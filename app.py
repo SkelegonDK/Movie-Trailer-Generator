@@ -294,21 +294,24 @@ def main():
             )
 
             # --- Generate Audio Section ---
-            if st.button(
-                "Generate Voice over", disabled=not elevenlabs_key_present
-            ):  # Also disable if ElevenLabs key missing
+            if st.button("Generate Voice over", disabled=not elevenlabs_key_present):
                 if not elevenlabs_key_present:
                     st.error("Cannot generate audio: ElevenLabs API key is missing.")
                 elif not st.session_state.generated_script:
                     st.warning("Please generate a script first.")
                 else:
+                    # Set the voice generation request flag
+                    st.session_state.voice_generation_requested = True
+
                     with st.spinner("Generating audio..."):
                         # Pass the key directly from config if needed by the function
-                        # Alternatively, ensure the function reads from st.secrets or config
                         audio = functions.generate_audio_with_elevenlabs(
                             st.session_state.generated_script,
-                            # voice_id="...") # Optional: specify voice ID if needed
                         )
+
+                        # Reset the request flag after generation
+                        st.session_state.voice_generation_requested = False
+
                     if audio:
                         # Save the audio file
                         audio_file_path = functions.save_audio_file(
