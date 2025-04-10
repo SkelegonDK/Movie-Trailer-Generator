@@ -1,5 +1,5 @@
 import pytest
-from config import Config
+from scripts.config import Config
 import streamlit as st
 
 
