@@ -1,13 +1,8 @@
 import os
 import random
-import json
-import requests
-from scripts.openrouter_client import OpenRouterClient
-from requests.exceptions import RequestException, ConnectionError, Timeout
+import streamlit as st
 from config import Config
 from utils.llm_api import call_llm
-
-import streamlit as st
 from scripts import functions, prompts
 
 
