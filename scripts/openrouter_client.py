@@ -1,8 +1,7 @@
 import requests
-import json
 import streamlit as st
 from typing import List, Dict, Any, Optional
-from config import Config
+from scripts.config import Config
 from scripts import prompts
 import socket
 from requests.exceptions import RequestException
