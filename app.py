@@ -1,9 +1,9 @@
 import os
 import random
 import streamlit as st
-from config import Config
 from utils.llm_api import call_llm
 from scripts import functions, prompts
+from scripts.config import Config
 
 
 def main():
