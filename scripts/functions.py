@@ -70,6 +70,21 @@ def card(category, option, color):
 
 
 def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
+    """
+    Generates speech audio from text using the ElevenLabs API.
+
+    Sends a request to the ElevenLabs text-to-speech endpoint with the provided
+    text and voice ID. Handles potential API errors and returns the audio content.
+
+    Args:
+        text (str): The text content to convert to speech.
+        voice_id (str, optional): The ElevenLabs voice ID to use.
+                                Defaults to "FF7KdobWPaiR0vkcALHF".
+
+    Returns:
+        bytes | None: The generated audio content as bytes if successful,
+                      otherwise None if an error occurred.
+    """
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {
         "Accept": "audio/mpeg",
@@ -214,7 +229,19 @@ def apply_background_music(audio_filepath):
 
 
 def generate_script_with_ollama(prompt):
-    """Generate a script using the local Ollama API"""
+    """
+    Generates text (e.g., a script) using a local Ollama model via its API.
+
+    Sends a request to the Ollama API's generate endpoint with the specified
+    model and prompt. Handles potential API errors and returns the generated text.
+
+    Args:
+        prompt (str): The input prompt to send to the Ollama model.
+
+    Returns:
+        str | None: The generated text response from Ollama if successful,
+                    otherwise None if an error occurred.
+    """
     url = "http://localhost:11434/api/generate"
     data = {"model": "llama2", "prompt": prompt, "stream": False}
 

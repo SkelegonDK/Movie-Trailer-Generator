@@ -25,7 +25,18 @@ class Config:
 
     @classmethod
     def load(cls) -> "Config":
-        """Load configuration from environment variables and Streamlit secrets."""
+        """
+        Load configuration settings, prioritizing environment variables over Streamlit secrets.
+
+        Loads the following settings if available:
+        - openrouter_api_key: From OPENROUTER_API_KEY env var or st.secrets.openrouter_api_key.
+        - openrouter_model_list: From st.secrets.openrouter_model_list. Defaults factory if not found.
+        - openrouter_default_model: From st.secrets.openrouter_default_model, falling back
+          to the deprecated st.secrets.openrouter_model if necessary. Uses class default otherwise.
+
+        Returns:
+            Config: An instance of the Config class populated with loaded settings.
+        """
         config_data: Dict[str, Any] = {}
 
         # --- API Key ---

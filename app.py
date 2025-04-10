@@ -7,6 +7,15 @@ from scripts import functions, prompts
 
 
 def main():
+    """
+    Sets up and runs the Streamlit application for the Movie Trailer Generator.
+
+    This function initializes the Streamlit page configuration, manages session state
+    for model selection (local Ollama or OpenRouter) and trailer elements,
+    handles user interactions through the sidebar and main content area,
+    generates a movie title and voice-over script using an LLM based on selected
+    or randomized elements, and displays the results.
+    """
     st.set_page_config(page_title="Movie Trailer Generator", layout="wide")
     st.title("Movie Trailer Generator")
 

@@ -23,8 +23,8 @@
 - [x] Improve error handling for OpenRouter API calls.
 - [x] Add unit tests for OpenRouter functions in app.py.
 - [x] Update prompts for clarity and consistency.
+- [x] Add a mechanism to check that the movie title output is valid.
+- [x] Add `assets/audio/trailer_music.mp3` to the repository.
 
 ## Next Up
 - [ ] Add image prompt generation as a future feature
-- [ ] Add a mechanism to check that the movie title output is valid.
-- [ ] Add `assets/audio/trailer_music.mp3` to the repository.
