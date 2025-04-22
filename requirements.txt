@@ -1,2 +1,0 @@
-openai>=1.0.0 # For OpenAI/OpenRouter/Ollama API access 
-pydub==0.25.1  # For audio processing and background music mixing 

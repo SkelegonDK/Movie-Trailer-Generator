@@ -16,4 +16,15 @@ dependencies = [
 ]
 
 [tool.uv]
-dev-dependencies = []
+dev-dependencies = [
+    "isort",
+    "ruff",
+    "black",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "requests-mock",
+    "types-requests",
+    "types-setuptools",
+]
