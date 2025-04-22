@@ -61,6 +61,12 @@ def main():
     st.set_page_config(page_title="Movie Trailer Generator", layout="wide")
     st.title("Movie Trailer Generator")
 
+    # --- Ensure session_id is set for per-session audio storage ---
+    if "session_id" not in st.session_state:
+        import uuid
+
+        st.session_state.session_id = str(uuid.uuid4())
+
     # Initialize configuration
     config = Config.load()
 
