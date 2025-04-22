@@ -11,6 +11,51 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 
+class MockSessionState(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.api_keys = {}
+        self.audio_cache = {}
+        self.voice_generation_requested = False
+        self._is_running = True
+
+    def __getattr__(self, name):
+        if name not in self:
+            self[name] = {}
+        return self[name]
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+
+@pytest.fixture
+def mock_streamlit():
+    """Mock streamlit module for testing"""
+    mock_st = MagicMock()
+    mock_st.session_state = MockSessionState()
+    return mock_st
+
+
+@pytest.fixture
+def mock_api_key_manager():
+    """Mock APIKeyManager for testing"""
+
+    class MockAPIKeyManager:
+        @staticmethod
+        def get_api_key(key_name):
+            if key_name == "OPENROUTER_API_KEY":
+                return "test_openrouter_key"
+            elif key_name == "ELEVENLABS_API_KEY":
+                return "test_elevenlabs_key"
+            return None
+
+        @staticmethod
+        def set_api_key(key_name, value, expiration=None):
+            pass
+
+    return MockAPIKeyManager()
+
+
 @pytest.fixture(autouse=True)
 def mock_streamlit():
     """

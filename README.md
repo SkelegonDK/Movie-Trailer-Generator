@@ -73,6 +73,20 @@ OPENROUTER_API_KEY = "YOUR_OPENROUTER_KEY"
 
 Replace `"YOUR_ELEVENLABS_KEY"` and `"YOUR_OPENROUTER_KEY"` with your actual API keys. You can also optionally override the default OpenRouter model and the list of available models here, as shown in the commented-out example.
 
+## API Usage & Rate Limits
+
+**OpenRouter**
+- Requests are rate-limited to 1 request per second per user.
+- If you exceed this, you may see errors or be temporarily blocked.
+- Persistent failures will trigger a circuit breaker, temporarily disabling requests for your session.
+
+**ElevenLabs**
+- Subject to ElevenLabs' own API rate limits (see [official docs](https://docs.elevenlabs.io/)).
+- If you hit a limit, you will see an error and can retry after a short wait.
+- If there are 3 consecutive errors (e.g., network, API, or quota issues), the app will temporarily disable ElevenLabs audio generation for 5 minutes (circuit breaker). The UI will clearly show the remaining wait time and disable the button until the timeout expires.
+
+If you encounter errors, you will see a detailed error message and a Retry button.
+
 ## Usage
 
 1. **Run the Streamlit app:**
@@ -84,3 +98,5 @@ Replace `"YOUR_ELEVENLABS_KEY"` and `"YOUR_OPENROUTER_KEY"` with your actual API
     ```
 
     This will start the Streamlit app in your web browser.
+
+- When generating audio, if the ElevenLabs service experiences repeated errors, the 'Generate Voice over' button will be disabled for 5 minutes and a message will show the remaining wait time. This helps prevent further issues and gives clear feedback to the user.

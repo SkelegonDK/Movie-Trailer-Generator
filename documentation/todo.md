@@ -23,6 +23,16 @@
 - [x] Improve error handling for OpenRouter API calls.
 - [x] Add unit tests for OpenRouter functions in app.py.
 - [x] Update prompts for clarity and consistency.
+- [x] Add comprehensive tests for movie name generation functionality [T123] [Complexity: 7/10] [Priority: High] [Status: Complete]
+  - Context: Ensure reliability of movie name generation with proper test coverage
+  - Acceptance criteria: All test cases pass, including success and error scenarios
+  - Dependencies: None
+  - Subtasks:
+    - [x] [T123.1] Test successful movie name generation [Complexity: 3/10]
+    - [x] [T123.2] Test empty response handling [Complexity: 2/10]
+    - [x] [T123.3] Test invalid response handling [Complexity: 2/10]
+    - [x] [T123.4] Test API error handling [Complexity: 2/10]
+    - [x] [T123.5] Test missing fields handling [Complexity: 2/10]
 
 ## Next Up
 - [ ] Add image prompt generation as a future feature

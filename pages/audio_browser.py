@@ -11,9 +11,13 @@ AUDIO_DIR = "generated_audio"
 # Ensure the directory exists before trying to clean/list
 os.makedirs(AUDIO_DIR, exist_ok=True)
 try:
-    deleted_count = cleanup_old_audio_files(directory=AUDIO_DIR, max_age_hours=24)
+    deleted_count = cleanup_old_audio_files(
+        directory=AUDIO_DIR, max_age_hours=24, max_files=100
+    )
     if deleted_count > 0:
-        st.toast(f"🧹 Cleaned up {deleted_count} old audio file(s) (> 24 hours).")
+        st.toast(
+            f"🧹 Cleaned up {deleted_count} old audio file(s) (> 24 hours or over 100 files)."
+        )
 except Exception as e:
     # Catch potential errors during cleanup itself, although the function has internal handling
     st.error(f"An error occurred during audio cleanup: {e}")

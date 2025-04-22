@@ -10,6 +10,7 @@ from scripts import prompts
 import time
 from datetime import timedelta
 import hashlib
+from utils.api_key_manager import APIKeyManager
 
 
 try:
@@ -90,28 +91,85 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     if not st.session_state.get("voice_generation_requested", False):
         return None
 
-    # Check for API key
-    if not st.secrets.get("ELEVENLABS_API_KEY"):
+    # Get API key from session storage
+    api_key = APIKeyManager.get_api_key("ELEVENLABS_API_KEY")
+    if not api_key:
         st.error(
-            "ElevenLabs API key not found. Please configure it via secrets.toml or environment variable."
+            "ElevenLabs API key not found or expired. Please add it via the API Key Management page."
         )
         return None
+
+    # Initialize cache in session state if not exists
+    if not hasattr(st.session_state, "elevenlabs_cache"):
+        st.session_state.elevenlabs_cache = {
+            "audio": {},
+            "last_request_time": 0,
+            "request_count": 0,
+            "rate_limit_reset": time.time(),
+            "failure_count": 0,  # For circuit breaker
+            "circuit_opened_at": None,  # For circuit breaker
+        }
+
+    # Circuit breaker settings
+    CIRCUIT_BREAKER_THRESHOLD = 3  # Number of consecutive failures
+    CIRCUIT_BREAKER_TIMEOUT = 300  # 5 minutes in seconds
+
+    # Circuit breaker check
+    cache = st.session_state.elevenlabs_cache
+    if cache["failure_count"] >= CIRCUIT_BREAKER_THRESHOLD:
+        if cache["circuit_opened_at"] is None:
+            cache["circuit_opened_at"] = time.time()
+        elapsed = time.time() - cache["circuit_opened_at"]
+        if elapsed < CIRCUIT_BREAKER_TIMEOUT:
+            st.error(
+                f"ElevenLabs temporarily disabled due to repeated failures. Please wait {int(CIRCUIT_BREAKER_TIMEOUT - elapsed)} seconds and try again."
+            )
+            return None
+        else:
+            # Reset circuit breaker after timeout
+            cache["failure_count"] = 0
+            cache["circuit_opened_at"] = None
+
+    # Rate limiting settings
+    MIN_REQUEST_INTERVAL = 0.5  # Minimum seconds between requests
+    MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute
+
+    # Check rate limits
+    current_time = time.time()
+
+    # Reset request count if a minute has passed
+    if current_time - st.session_state.elevenlabs_cache["rate_limit_reset"] >= 60:
+        st.session_state.elevenlabs_cache["request_count"] = 0
+        st.session_state.elevenlabs_cache["rate_limit_reset"] = current_time
+
+    # Check if we've hit the rate limit
+    if st.session_state.elevenlabs_cache["request_count"] >= MAX_REQUESTS_PER_MINUTE:
+        time_to_wait = 60 - (
+            current_time - st.session_state.elevenlabs_cache["rate_limit_reset"]
+        )
+        if time_to_wait > 0:
+            st.warning(f"Rate limit reached. Please wait {int(time_to_wait)} seconds.")
+            return None
+
+    # Enforce minimum interval between requests
+    time_since_last = (
+        current_time - st.session_state.elevenlabs_cache["last_request_time"]
+    )
+    if time_since_last < MIN_REQUEST_INTERVAL:
+        time.sleep(MIN_REQUEST_INTERVAL - time_since_last)
 
     # Generate cache key based on text and voice_id
     cache_key = hashlib.md5(f"{text}{voice_id}".encode()).hexdigest()
 
     # Check if we have this audio cached
-    if "audio_cache" not in st.session_state:
-        st.session_state.audio_cache = {}
-
-    if cache_key in st.session_state.audio_cache:
-        return st.session_state.audio_cache[cache_key]
+    if cache_key in st.session_state.elevenlabs_cache["audio"]:
+        return st.session_state.elevenlabs_cache["audio"][cache_key]
 
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {
         "Accept": "audio/mpeg",
         "Content-Type": "application/json",
-        "xi-api-key": st.secrets.get("ELEVENLABS_API_KEY"),
+        "xi-api-key": api_key,
     }
     data = {
         "text": text,
@@ -120,17 +178,40 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
     }
 
     try:
+        # Update rate limiting trackers before making request
+        st.session_state.elevenlabs_cache["last_request_time"] = time.time()
+        st.session_state.elevenlabs_cache["request_count"] += 1
+
         response = requests.post(url, json=data, headers=headers, timeout=60)
         response.raise_for_status()
         audio_content = response.content
 
         # Cache the generated audio
-        st.session_state.audio_cache[cache_key] = audio_content
+        st.session_state.elevenlabs_cache["audio"][cache_key] = audio_content
+
+        # Reset circuit breaker on success
+        cache["failure_count"] = 0
+        cache["circuit_opened_at"] = None
 
         return audio_content
     except requests.exceptions.RequestException as e:
+        cache["failure_count"] += 1
+        if cache["failure_count"] >= CIRCUIT_BREAKER_THRESHOLD:
+            cache["circuit_opened_at"] = time.time()
+        # Log error for monitoring
+        print(f"[ElevenLabs Error] {type(e).__name__}: {e}")
         st.error(
-            f"Error generating audio via ElevenLabs: {str(e)}. Check API key and network."
+            f"Error generating audio via ElevenLabs [{type(e).__name__}]: {str(e)}. Check API key and network."
+        )
+        return None
+    except Exception as e:
+        cache["failure_count"] += 1
+        if cache["failure_count"] >= CIRCUIT_BREAKER_THRESHOLD:
+            cache["circuit_opened_at"] = time.time()
+        # Log error for monitoring
+        print(f"[ElevenLabs Error] {type(e).__name__}: {e}")
+        st.error(
+            f"Unexpected error during audio generation [{type(e).__name__}]: {str(e)}"
         )
         return None
 
@@ -232,20 +313,23 @@ def apply_background_music(audio_filepath):
         return None
 
 
-def cleanup_old_audio_files(directory="generated_audio", max_age_hours=24):
+def cleanup_old_audio_files(
+    directory="generated_audio", max_age_hours=24, max_files=100
+):
     """
     Deletes MP3 files older than a specified number of hours from a directory.
+    Also enforces a maximum number of files, deleting oldest files first if needed.
 
     Args:
         directory (str): The directory to clean up. Defaults to "generated_audio".
         max_age_hours (int): The maximum age of files in hours. Defaults to 24.
+        max_files (int): The maximum number of files to keep. Defaults to 100.
 
     Returns:
         int: The number of files deleted.
     """
     if not os.path.isdir(directory):
-        # st.warning(f"Cleanup directory '{directory}' not found.") # Optional warning
-        return 0  # Indicate no files were deleted
+        return 0
 
     now = time.time()
     cutoff = now - timedelta(hours=max_age_hours).total_seconds()
@@ -255,10 +339,11 @@ def cleanup_old_audio_files(directory="generated_audio", max_age_hours=24):
         files_to_check = os.listdir(directory)
     except OSError as e:
         st.error(f"Error accessing directory {directory} for cleanup: {e}")
-        return 0  # Cannot proceed
+        return 0
 
+    # First, delete files older than max_age_hours
     for filename in files_to_check:
-        if not filename.endswith(".mp3"):  # Only target mp3 files
+        if not filename.endswith(".mp3"):
             continue
         filepath = os.path.join(directory, filename)
         try:
@@ -267,15 +352,34 @@ def cleanup_old_audio_files(directory="generated_audio", max_age_hours=24):
                 if file_mod_time < cutoff:
                     os.remove(filepath)
                     deleted_count += 1
-                    # Optionally log deletion: print(f"Deleted old audio file: {filepath}")
         except FileNotFoundError:
-            # File might have been deleted by another process between listdir and check, ignore.
             pass
         except OSError as e:
-            st.warning(f"Error deleting file {filepath}: {e}")  # Warn but continue
+            st.warning(f"Error deleting file {filepath}: {e}")
         except Exception as e:
-            # Catch unexpected errors during file processing
             st.warning(f"Unexpected error processing file {filepath} for cleanup: {e}")
+
+    # Enforce max_files: delete oldest if more than max_files remain
+    # Re-list after age-based cleanup
+    try:
+        remaining_files = [f for f in os.listdir(directory) if f.endswith(".mp3")]
+        if len(remaining_files) > max_files:
+            # Sort by modification time, oldest first
+            remaining_files.sort(
+                key=lambda x: os.path.getmtime(os.path.join(directory, x))
+            )
+            files_to_delete = remaining_files[: len(remaining_files) - max_files]
+            for filename in files_to_delete:
+                filepath = os.path.join(directory, filename)
+                try:
+                    os.remove(filepath)
+                    deleted_count += 1
+                except Exception as e:
+                    st.warning(
+                        f"Error deleting file {filepath} to enforce max_files: {e}"
+                    )
+    except Exception as e:
+        st.warning(f"Error enforcing max_files in {directory}: {e}")
 
     return deleted_count
 

@@ -2,6 +2,7 @@ import streamlit as st
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 import os
+from utils.api_key_manager import APIKeyManager
 
 
 @dataclass
@@ -26,24 +27,35 @@ class Config:
 
     @classmethod
     def load(cls) -> "Config":
-        """Load configuration from environment variables and Streamlit secrets."""
+        """Load configuration from environment variables and session storage."""
         config_data: Dict[str, Any] = {}
 
-        # --- API Key ---
-        # Try env var first
-        openrouter_key = os.getenv("OPENROUTER_API_KEY")
+        # --- API Keys ---
+        # Try session storage first, then env var, then secrets for backward compatibility
+
+        # OpenRouter API Key
+        openrouter_key = (
+            APIKeyManager.get_api_key("OPENROUTER_API_KEY")
+            or os.getenv("OPENROUTER_API_KEY")
+            or getattr(st.secrets, "OPENROUTER_API_KEY", None)
+        )
         if openrouter_key:
             config_data["openrouter_api_key"] = openrouter_key
-        # Fall back to secrets
-        elif hasattr(st.secrets, "openrouter_api_key"):
-            config_data["openrouter_api_key"] = st.secrets.openrouter_api_key
+            # If key was found in secrets or env var, store it in session
+            if not APIKeyManager.get_api_key("OPENROUTER_API_KEY"):
+                APIKeyManager.set_api_key("OPENROUTER_API_KEY", openrouter_key)
 
-        # --- ElevenLabs API Key ---
-        elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+        # ElevenLabs API Key
+        elevenlabs_key = (
+            APIKeyManager.get_api_key("ELEVENLABS_API_KEY")
+            or os.getenv("ELEVENLABS_API_KEY")
+            or getattr(st.secrets, "ELEVENLABS_API_KEY", None)
+        )
         if elevenlabs_key:
             config_data["elevenlabs_api_key"] = elevenlabs_key
-        elif hasattr(st.secrets, "ELEVENLABS_API_KEY"):
-            config_data["elevenlabs_api_key"] = st.secrets.ELEVENLABS_API_KEY
+            # If key was found in secrets or env var, store it in session
+            if not APIKeyManager.get_api_key("ELEVENLABS_API_KEY"):
+                APIKeyManager.set_api_key("ELEVENLABS_API_KEY", elevenlabs_key)
 
         # --- Model List ---
         # Load from secrets if available

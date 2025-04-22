@@ -3,9 +3,11 @@ class MockDict:
 
     def __init__(self, *args, **kwargs):
         self._dict = dict(*args, **kwargs)
-        # Initialize audio_cache for session state
+        # Initialize audio_cache and api_keys for session state
         if "audio_cache" not in self._dict:
             self._dict["audio_cache"] = {}
+        if "api_keys" not in self._dict:
+            self._dict["api_keys"] = {}
 
     def __getattr__(self, name):
         return self._dict.get(name)

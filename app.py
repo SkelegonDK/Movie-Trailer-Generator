@@ -1,10 +1,55 @@
 import os
 import random
+import time
 from config import Config
 from utils.llm_api import call_llm
 
 import streamlit as st
 from scripts import functions, prompts
+
+
+def generate_movie_name_with_openrouter(
+    api_key: str, model_name: str, selected_points: dict
+) -> str:
+    """
+    Generate a movie name using the OpenRouter API.
+
+    Args:
+        api_key (str): OpenRouter API key
+        model_name (str): Name of the model to use
+        selected_points (dict): Dictionary containing the selected story elements
+
+    Returns:
+        str: Generated movie name
+    """
+    base_url = "https://openrouter.ai/api/v1"
+
+    # Prepare the prompt for movie name generation
+    movie_name_prompt = prompts.MOVIE_TITLE_USER_PROMPT.format(
+        genre=selected_points["Genre"],
+        main_character=selected_points["Main Character"],
+        setting=selected_points["Setting"],
+        conflict=selected_points["Conflict"],
+        plot_twist=selected_points["Plot Twist"],
+    )
+
+    # Call the LLM API
+    response = call_llm(
+        api_key=api_key,
+        base_url=base_url,
+        model=model_name,
+        messages=[{"role": "user", "content": movie_name_prompt}],
+        max_tokens=50,
+    )
+
+    if not response or "choices" not in response or not response["choices"]:
+        raise ValueError("Failed to generate movie name: No valid response from API")
+
+    movie_name = response["choices"][0]["message"]["content"].strip()
+    if not movie_name:
+        raise ValueError("Failed to generate movie name: Empty response from API")
+
+    return movie_name
 
 
 def main():
@@ -172,51 +217,27 @@ def main():
             st.session_state.generated_script = None
             st.session_state.movie_name = None
 
-            # Use OpenRouter (Now the only path)
-            base_url = "https://openrouter.ai/api/v1"
             # Get API key from the loaded config object
             api_key = config.openrouter_api_key
             # Get selected model from session state (set earlier)
             model_name_for_generation = st.session_state.selected_model
 
             # Basic validation of parameters
-            if not api_key or not base_url or not model_name_for_generation:
+            if not api_key or not model_name_for_generation:
                 st.error(
-                    "API Key, Base URL, or Model Name is missing. Please check configuration."
+                    "API Key or Model Name is missing. Please check configuration."
                 )
             else:
                 # --- First LLM Call (Movie Name) using call_llm ---
-                movie_name = None
                 try:
                     with st.spinner("Generating movie name..."):
-                        # Prepare the prompt for movie name generation
-                        movie_name_prompt = prompts.MOVIE_TITLE_USER_PROMPT.format(
-                            genre=st.session_state.selected_points["Genre"],
-                            main_character=st.session_state.selected_points[
-                                "Main Character"
-                            ],
-                            setting=st.session_state.selected_points["Setting"],
-                            conflict=st.session_state.selected_points["Conflict"],
-                            plot_twist=st.session_state.selected_points["Plot Twist"],
-                        )
-
-                        movie_name = call_llm(
-                            model_name=model_name_for_generation,
-                            prompt=movie_name_prompt,
+                        movie_name = generate_movie_name_with_openrouter(
                             api_key=api_key,
-                            base_url=base_url,
-                            temperature=0.7,
-                            max_tokens=50,
+                            model_name=model_name_for_generation,
+                            selected_points=st.session_state.selected_points,
                         )
-                except Exception as e:
-                    st.error(f"Error generating movie name: {e}")
-                    st.stop()
-
-                # --- Check Movie Name ---
-                if movie_name and isinstance(movie_name, str):
-                    # Clean up potential quotes or extra whitespace
-                    st.session_state.movie_name = movie_name.strip().replace('"', "")
-                    st.success(f"Generated Movie Name: {st.session_state.movie_name}")
+                        st.session_state.movie_name = movie_name
+                        st.success(f"Generated Movie Name: {movie_name}")
 
                     # --- Second LLM Call (Script) using call_llm ---
                     script = None
@@ -277,12 +298,9 @@ def main():
                                 "Script generation returned empty. Try adjusting parameters or regenerating."
                             )
                         st.session_state.script_generated = False
-                else:
-                    # Error message was already shown in the except block if name generation failed
-                    # If name is None/empty without an exception, show a generic message
-                    st.warning(
-                        "Movie name generation returned empty. Please try again."
-                    )
+                except Exception as e:
+                    st.error(f"Error generating movie name: {e}")
+                    st.stop()
 
         # Display the script if it exists
         if st.session_state.get("script_generated", False):
@@ -294,7 +312,31 @@ def main():
             )
 
             # --- Generate Audio Section ---
-            if st.button("Generate Voice over", disabled=not elevenlabs_key_present):
+            # Check ElevenLabs circuit breaker state
+            circuit_breaker_active = False
+            circuit_breaker_wait = 0
+            if hasattr(st.session_state, "elevenlabs_cache"):
+                cache = st.session_state.elevenlabs_cache
+                CIRCUIT_BREAKER_THRESHOLD = 3
+                CIRCUIT_BREAKER_TIMEOUT = 300
+                if cache.get("failure_count", 0) >= CIRCUIT_BREAKER_THRESHOLD:
+                    if cache.get("circuit_opened_at") is not None:
+                        elapsed = time.time() - cache["circuit_opened_at"]
+                        if elapsed < CIRCUIT_BREAKER_TIMEOUT:
+                            circuit_breaker_active = True
+                            circuit_breaker_wait = int(
+                                CIRCUIT_BREAKER_TIMEOUT - elapsed
+                            )
+
+            button_label = "Generate Voice over"
+            button_disabled = not elevenlabs_key_present or circuit_breaker_active
+            if circuit_breaker_active:
+                button_label = f"Temporarily Disabled ({circuit_breaker_wait}s)"
+                st.error(
+                    f"ElevenLabs temporarily disabled due to repeated errors. Please wait {circuit_breaker_wait} seconds before trying again."
+                )
+
+            if st.button(button_label, disabled=button_disabled):
                 if not elevenlabs_key_present:
                     st.error("Cannot generate audio: ElevenLabs API key is missing.")
                 elif not st.session_state.generated_script:
