@@ -217,21 +217,21 @@ def generate_audio_with_elevenlabs(text, voice_id="FF7KdobWPaiR0vkcALHF"):
 
 
 def save_audio_file(audio_content, selected_points, movie_name):
-    """Save voice-over audio with descriptive filename.
+    """Save voice-over audio with descriptive filename in a per-session directory."""
+    # --- Session ID logic ---
+    if "session_id" not in st.session_state:
+        import uuid
 
-    Args:
-        audio_content (bytes): The audio content to save
-        selected_points (dict): Dictionary of selected trailer elements
-        movie_name (str): Name of the movie
+        st.session_state.session_id = str(uuid.uuid4())
+    session_id = st.session_state.session_id
 
-    Returns:
-        str: Path to saved audio file
-    """
-    os.makedirs("generated_audio", exist_ok=True)
+    # Create per-session directory
+    session_dir = os.path.join("generated_audio", session_id)
+    os.makedirs(session_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"voiceover_{movie_name}_{timestamp}.mp3"
-    filepath = os.path.join("generated_audio", filename)
+    filepath = os.path.join(session_dir, filename)
 
     with open(filepath, "wb") as f:
         f.write(audio_content)
@@ -313,18 +313,14 @@ def apply_background_music(audio_filepath):
         return None
 
 
-def cleanup_old_audio_files(
-    directory="generated_audio", max_age_hours=24, max_files=100
-):
+def cleanup_old_audio_files(directory="generated_audio", max_age_hours=24, max_files=5):
     """
     Deletes MP3 files older than a specified number of hours from a directory.
     Also enforces a maximum number of files, deleting oldest files first if needed.
-
     Args:
         directory (str): The directory to clean up. Defaults to "generated_audio".
         max_age_hours (int): The maximum age of files in hours. Defaults to 24.
-        max_files (int): The maximum number of files to keep. Defaults to 100.
-
+        max_files (int): The maximum number of files to keep. Defaults to 5.
     Returns:
         int: The number of files deleted.
     """
