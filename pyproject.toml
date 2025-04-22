@@ -10,6 +10,7 @@ dependencies = [
     "python-ffmpeg",
     "moviepy",
     "pydub",
+    "ffmpeg>=1.4",
 ]
 
 [tool.uv]

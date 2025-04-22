@@ -31,6 +31,37 @@ Before you begin, you'll need to have Python installed on your computer. You can
     * Background music file: Place your trailer music in `assets/audio/trailer_music.mp3`
     * The background music will be automatically stretched to match the voice-over length and mixed at a lower volume
 
+## Environment Setup (using uv)
+
+This project uses [uv](https://github.com/astral-sh/uv) for Python package and environment management. Please ensure you have uv installed:
+
+```bash
+pip install uv
+```
+
+To create a virtual environment and install all dependencies:
+
+```bash
+uv venv .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+```
+
+## Audio Features: Additional System Dependency
+
+To enable audio processing (background music mixing, etc.), you must also install ffmpeg:
+
+- **macOS:**
+  ```bash
+  brew install ffmpeg
+  ```
+- **Ubuntu/Debian:**
+  ```bash
+  sudo apt-get install ffmpeg
+  ```
+- **Windows:**
+  Download from https://ffmpeg.org/download.html and add to your PATH.
+
 ## API Keys
 
 This application requires API keys for external services:
@@ -87,16 +118,12 @@ Replace `"YOUR_ELEVENLABS_KEY"` and `"YOUR_OPENROUTER_KEY"` with your actual API
 
 If you encounter errors, you will see a detailed error message and a Retry button.
 
-## Usage
+## Running the App
 
-1. **Run the Streamlit app:**
+After installing dependencies and system requirements, start the app with:
 
-    Open your terminal (Mac) or Command Prompt (Windows) and navigate to the project directory. Then, run the following command:
-
-    ```bash
-    streamlit run app.py
-    ```
-
-    This will start the Streamlit app in your web browser.
+```bash
+streamlit run app.py
+```
 
 - When generating audio, if the ElevenLabs service experiences repeated errors, the 'Generate Voice over' button will be disabled for 5 minutes and a message will show the remaining wait time. This helps prevent further issues and gives clear feedback to the user.
