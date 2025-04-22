@@ -1118,14 +1118,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "audiostretchy" },
-    { name = "ffmpeg", specifier = ">=1.4" },
+    { name = "ffmpeg" },
     { name = "moviepy" },
-    { name = "openai", specifier = ">=1.75.0" },
+    { name = "openai" },
     { name = "pydub" },
     { name = "python-ffmpeg" },
     { name = "requests" },
     { name = "streamlit" },
-    { name = "watchdog", specifier = ">=6.0.0" },
+    { name = "watchdog" },
 ]
 
 [package.metadata.requires-dev]
