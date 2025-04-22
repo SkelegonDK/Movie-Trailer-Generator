@@ -5,18 +5,25 @@ from scripts.functions import cleanup_old_audio_files  # Import the cleanup func
 
 st.title("Audio Browser")
 
-AUDIO_DIR = "generated_audio"
+# --- Session ID logic ---
+if "session_id" not in st.session_state:
+    import uuid
+
+    st.session_state.session_id = str(uuid.uuid4())
+session_id = st.session_state.session_id
+
+AUDIO_DIR = os.path.join("generated_audio", session_id)
 
 # --- Run cleanup first ---
 # Ensure the directory exists before trying to clean/list
 os.makedirs(AUDIO_DIR, exist_ok=True)
 try:
     deleted_count = cleanup_old_audio_files(
-        directory=AUDIO_DIR, max_age_hours=24, max_files=100
+        directory=AUDIO_DIR, max_age_hours=24, max_files=5
     )
     if deleted_count > 0:
         st.toast(
-            f"🧹 Cleaned up {deleted_count} old audio file(s) (> 24 hours or over 100 files)."
+            f"🧹 Cleaned up {deleted_count} old audio file(s) (> 24 hours or over 5 files)."
         )
 except Exception as e:
     # Catch potential errors during cleanup itself, although the function has internal handling
@@ -66,4 +73,6 @@ if audio_files:
         except Exception as e:
             st.error(f"An error occurred displaying file '{audio_file}': {e}")
 else:
-    st.info("No audio files found in the generated audio directory.")  # Changed message
+    st.info(
+        "No audio files found in your session's generated audio directory."
+    )  # Changed message
