@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock, Mock
 from scripts.openrouter_client import OpenRouterClient
-from config import Config
+from scripts.config import Config
 import requests
 from scripts import prompts
 from requests.exceptions import RequestException
