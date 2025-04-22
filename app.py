@@ -33,23 +33,19 @@ def generate_movie_name_with_openrouter(
         plot_twist=selected_points["Plot Twist"],
     )
 
-    # Call the LLM API
-    response = call_llm(
+    # Call the LLM API with correct arguments
+    movie_name = call_llm(
+        model_name=model_name,
+        prompt=movie_name_prompt,
         api_key=api_key,
         base_url=base_url,
-        model=model_name,
-        messages=[{"role": "user", "content": movie_name_prompt}],
         max_tokens=50,
     )
 
-    if not response or "choices" not in response or not response["choices"]:
-        raise ValueError("Failed to generate movie name: No valid response from API")
-
-    movie_name = response["choices"][0]["message"]["content"].strip()
-    if not movie_name:
+    if not movie_name or not movie_name.strip():
         raise ValueError("Failed to generate movie name: Empty response from API")
 
-    return movie_name
+    return movie_name.strip()
 
 
 def main():
@@ -158,7 +154,7 @@ def main():
         st.session_state.generated_script = ""  # Initialize as an empty string
 
     # Create three columns: one for the cards, one for the main content, and one for the audio browser
-    card_col, main_col, empty_col = st.columns([1, 2, 1])
+    card_col, main_col = st.columns([1, 2])
 
     # Cards column
     with card_col:
@@ -263,11 +259,13 @@ def main():
                                 **script_prompt_args
                             )
 
+                            base_url = "https://openrouter.ai/api/v1"
                             script = call_llm(
                                 model_name=model_name_for_generation,
                                 prompt=script_prompt,
                                 api_key=api_key,
                                 base_url=base_url,
+                                system_prompt=prompts.SCRIPT_SYSTEM_PROMPT,
                                 temperature=0.7,
                                 max_tokens=500,
                             )

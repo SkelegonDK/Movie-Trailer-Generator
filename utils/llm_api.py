@@ -12,7 +12,12 @@ from typing import Optional, Any
 
 
 def call_llm(
-    model_name: str, prompt: str, api_key: str, base_url: str, **kwargs: Any
+    model_name: str,
+    prompt: str,
+    api_key: str,
+    base_url: str,
+    system_prompt: str = None,
+    **kwargs: Any,
 ) -> Optional[str]:
     """
     Calls a Large Language Model (LLM) using the OpenAI API standard.
@@ -26,6 +31,7 @@ def call_llm(
         prompt: The user's prompt as a simple string.
         api_key: The API key for the target service.
         base_url: The base URL of the target API endpoint (e.g., "https://openrouter.ai/api/v1", "http://localhost:11434/v1").
+        system_prompt: Optional system prompt to set LLM behavior.
         **kwargs: Additional keyword arguments to pass directly to the
                   openai.chat.completions.create method (e.g., temperature, max_tokens).
 
@@ -48,6 +54,7 @@ def call_llm(
     # Avoid printing the actual API key for security
     print(f"API Key Provided: {'Yes' if api_key else 'No'}")
     print(f"Prompt: {prompt[:100]}...")  # Print truncated prompt
+    print(f"System Prompt: {system_prompt[:100] if system_prompt else None}")
     print(f"Additional Args: {kwargs}")
 
     try:
@@ -58,7 +65,13 @@ def call_llm(
             api_key=api_key,
         )
 
-        messages = [{"role": "user", "content": prompt}]
+        if system_prompt:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+        else:
+            messages = [{"role": "user", "content": prompt}]
 
         completion = client.chat.completions.create(
             model=model_name, messages=messages, **kwargs

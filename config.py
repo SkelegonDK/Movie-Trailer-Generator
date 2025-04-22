@@ -23,7 +23,9 @@ class Config:
             "google/gemma-3-4b-it:free",
         ]
     )
-    openrouter_default_model: Optional[str] = "deepseek/deepseek-chat-v3-0324:free"
+    openrouter_default_model: Optional[str] = (
+        "mistralai/mistral-small-3.1-24b-instruct:free"
+    )
 
     @classmethod
     def load(cls) -> "Config":
