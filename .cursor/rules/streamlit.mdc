@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Environment & Package Management
+- Always use `uv` for environment and package management in python
+- Before installing any new package, search for and review its documentation
+- `uv add` to add packages
+- `uv sync` to update packages
+- `uv venv project-name` for virtual environment instancing
+- `pyproject.toml` has the names for the installed packages
+- Include brief justification comments for each package addition
