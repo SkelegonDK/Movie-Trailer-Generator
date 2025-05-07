@@ -42,9 +42,9 @@ pip install uv
 To create a virtual environment and install all dependencies:
 
 ```bash
-uv venv .venv
-source .venv/bin/activate
-uv pip install -r requirements.txt
+uv venv project-name
+source project-name/bin/activate
+uv sync
 ```
 
 ## Audio Features: Additional System Dependency
