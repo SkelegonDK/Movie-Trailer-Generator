@@ -81,7 +81,7 @@ See [environment setup](documentation/environment-setup.md) for provider configu
 
 This release is intended for local or access-controlled use. Generation routes have no authentication or rate limiting; anyone who can access a hosted instance can make requests using its server API keys. Provider usage may incur charges. A deployment needs a Next.js server runtime, not a static-only host.
 
-Provider model and voice IDs are configured in `lib/api-client.ts` and `app/api/`. Availability depends on your provider account. Automated tests mock provider calls and do not validate live generation.
+OpenRouter model IDs are configured in `lib/api-client.ts` and `app/api/`. ElevenLabs voice and model settings are shared in `lib/elevenlabs-config.ts`. Availability depends on your provider account. Automated tests mock provider calls and do not validate live generation.
 
 ## License
 

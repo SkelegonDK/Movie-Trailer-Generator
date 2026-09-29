@@ -72,6 +72,7 @@ function stripWrappingQuotes(line: string): string {
  * - Screenplay-style scripts with "NARRATOR (V.O.)" markers and quoted lines.
  * - Pure spoken-text scripts (no markers), where every meaningful line is
  *   narration. Production markers like `<pause>` and `FADE IN:` are dropped.
+ * ElevenLabs square-bracket delivery cues are excluded from captions only.
  * @param {string} script - The movie script text.
  * @returns {string[]} Narration lines in script order.
  * @example
@@ -79,11 +80,13 @@ function stripWrappingQuotes(line: string): string {
  * // ["They said the internet was forever...", "MEMECEPTION."]
  */
 export function extractCaptionLines(script: string): string[] {
-  if (/NARRATOR \(V\.O\.?\)/.test(script)) return extractNarratorLines(script)
+  const sourceLines = /NARRATOR \(V\.O\.?\)/.test(script)
+    ? extractNarratorLines(script)
+    : script.split("\n")
 
   const lines: string[] = []
-  for (const raw of script.split("\n")) {
-    const line = stripWrappingQuotes(raw.trim())
+  for (const raw of sourceLines) {
+    const line = stripWrappingQuotes(raw.replace(/\[[^\]\r\n]*\]/g, "").replace(/[\t ]+/g, " ").trim())
     if (!line || isProductionMarker(line)) continue
     lines.push(line)
   }

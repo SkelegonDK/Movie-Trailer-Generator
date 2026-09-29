@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from "bun:test"
 import {
   ApiClient,
+  ENV_PROXY,
   generateMoviePoster,
   generatePosterData,
   type PosterData,
@@ -131,13 +132,28 @@ describe("ApiClient", () => {
 
     it("generates a voiceover via ElevenLabs", async () => {
       const audio = new ArrayBuffer(16)
+      const text = "[whispering] Hello world. [long pause] Coming soon."
       mockFetch.mockResolvedValueOnce(createMockResponse(audio))
-      const result = await apiClient.generateVoiceover("Hello world")
+      const result = await apiClient.generateVoiceover(text)
       expect(result).toBeInstanceOf(ArrayBuffer)
       expect(result.byteLength).toBe(16)
       const [url, options] = mockFetch.mock.calls[0]
-      expect(url).toBe("https://api.elevenlabs.io/v1/text-to-speech/FF7KdobWPaiR0vkcALHF")
+      expect(url).toBe("https://api.elevenlabs.io/v1/text-to-speech/24SBbCTZyk79Li12qFkf")
       expect((options?.headers as Record<string, string>)["xi-api-key"]).toBe(elevenLabsKey)
+      expect(JSON.parse(options?.body as string)).toEqual({
+        text,
+        model_id: "eleven_v4",
+        voice_settings: { stability: 0.6, similarity_boost: 0.8 },
+      })
+    })
+
+    it("preserves v4 audio tags when using the environment proxy", async () => {
+      const text = "[low, gravelly voice] One hero. [short pause] One chance."
+      mockFetch.mockResolvedValueOnce(createMockResponse(new ArrayBuffer(16)))
+      await new ApiClient(openRouterKey, ENV_PROXY).generateVoiceover(text)
+      const [url, options] = mockFetch.mock.calls[0]
+      expect(url).toBe("/api/elevenlabs-tts")
+      expect(JSON.parse(options?.body as string)).toEqual({ text })
     })
 
     it("surfaces ElevenLabs object detail on 401 instead of [object Object]", async () => {

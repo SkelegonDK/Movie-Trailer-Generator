@@ -6,7 +6,9 @@ import { POST as tts } from "../app/api/elevenlabs-tts/route"
 const originalFetch = globalThis.fetch
 const originalOpenRouterKey = process.env.OPENROUTER_API
 const originalElevenLabsKey = process.env.ELEVENLABS_API
-const fetchMock = mock(async () => Response.json({ choices: [{ message: { content: "Title" } }] }))
+const fetchMock = mock(async (_input: URL | RequestInfo, _init?: RequestInit) =>
+  Response.json({ choices: [{ message: { content: "Title" } }] }),
+)
 
 beforeEach(() => {
   process.env.OPENROUTER_API = "server-openrouter-key"
@@ -79,6 +81,20 @@ for (const { name, handler, body } of routes) {
 }
 
 describe("generation request validation", () => {
+  it("sends tagged narration to the requested voice with v4-compatible settings", async () => {
+    const text = "[whispering] In a world... [long pause] One hero."
+    const response = await tts(request({ text }))
+    expect(response.status).toBe(200)
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe("https://api.elevenlabs.io/v1/text-to-speech/24SBbCTZyk79Li12qFkf")
+    expect((options?.headers as Record<string, string>)["xi-api-key"]).toBe("server-elevenlabs-key")
+    expect(JSON.parse(options?.body as string)).toEqual({
+      text,
+      model_id: "eleven_v4",
+      voice_settings: { stability: 0.6, similarity_boost: 0.8 },
+    })
+  })
+
   it("rejects non-string narration instead of throwing a TypeError", async () => {
     expect((await tts(request({ text: 42 }))).status).toBe(400)
     expect(fetchMock).not.toHaveBeenCalled()

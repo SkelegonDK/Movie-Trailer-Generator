@@ -3,6 +3,7 @@ import { OPENROUTER_SCRIPT_SYSTEM_PROMPT, OPENROUTER_SCRIPT_USER_PROMPT } from "
 import { generatePosterPrompt } from "@/app/movieposterPrompts"
 import { posterDataSchema, type PosterData, type PosterDataResponse } from "@/lib/poster-schema"
 import { loadKeys } from "@/lib/vault"
+import { TTS_MODEL_ID, TTS_VOICE_ID, TTS_VOICE_SETTINGS } from "@/lib/elevenlabs-config"
 
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 const TEXT_MODEL = "z-ai/glm-5.3-flash"
@@ -187,8 +188,7 @@ export class ApiClient {
       return await response.arrayBuffer()
     }
     if (!this.elevenLabsKey) throw new Error("ElevenLabs API key is required")
-    const voiceId = "FF7KdobWPaiR0vkcALHF"
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${TTS_VOICE_ID}`, {
       method: "POST",
       headers: {
         "xi-api-key": this.elevenLabsKey,
@@ -196,14 +196,8 @@ export class ApiClient {
       },
       body: JSON.stringify({
         text,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: {
-          stability: 0.6,
-          similarity_boost: 0.8,
-          style: 0.3,
-          use_speaker_boost: true,
-          speed: 1.0,
-        },
+        model_id: TTS_MODEL_ID,
+        voice_settings: TTS_VOICE_SETTINGS,
       }),
     })
     if (!response.ok) {

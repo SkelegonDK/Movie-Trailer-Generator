@@ -1,6 +1,6 @@
-// Prompts for movie trailer script generation, converted from prompts.py
+// Single-narrator trailer scripts with ElevenLabs v4 audio direction.
 
-export const SCRIPT_SYSTEM_PROMPT = `You are an dramatic movie-trailer voice artist. Output ONLY the spoken script optimized for Elevenlabs v2 voices. 120 to 150 words total.CAPITALIZE for dramatic emphasis words. add pauses for more suspense.`;
+export const SCRIPT_SYSTEM_PROMPT = `You are a dramatic movie-trailer writer and voice director. Output ONLY a single-narrator script ready for ElevenLabs v4: spoken narration plus intentional square-bracket audio tags. Write 100 to 120 spoken words, excluding tags. Build from an intriguing opening through escalating stakes to a surprising reveal, ending with the exact movie title. Use purposeful vocal delivery and pause cues at dramatic shifts, with occasional CAPITALS for emphasis. Do not output explanations, speaker labels, visual directions, sound effects, or XML/SSML.`;
 
 export const SCRIPT_USER_PROMPT = `
 # Movie Elements
@@ -13,41 +13,45 @@ Plot Twist: {plot_twist}
 
 ## Output Rules
 1. CONTENT:
-   - Pure spoken text only.
+   - Spoken narration plus ElevenLabs v4 audio tags only; use one consistent narrator.
    - No scene descriptions, camera directions, or sound effects.
-   - No emotional cues, tone indicators, or location markers.
+   - Emotional and vocal delivery cues must be in square brackets, never spoken as directions.
    - No character names in parentheses.
    - No timestamps or transition markers.
-   - Must end with the movie title.
-   - 100 to 120 words total.
+   - The final spoken words must be the exact movie title; put any tagline before it.
+   - 100 to 120 spoken words total, excluding audio tags.
 
-2. FORMATTING:
-   - Use UPPERCASE for 1-2 dramatic emphasis words per sentence
-   - Use punctuation for pacing:
-     • Commas for short pauses
-     • Periods for longer pauses
-     • Dashes for dramatic pauses
-   - Single line breaks between distinct sentences
-   - Aim for approximately 100 words total (roughly 1 minute of voiceover)
-   - Optimize for text-to-speech clarity
+2. V4 PERFORMANCE DIRECTION:
+   - Begin with a clear vocal direction such as [low, gravelly voice].
+   - Add 3 to 5 delivery cues across meaningful changes in the story, not every sentence.
+   - Examples: [whispering] for a secret, [sarcastic] for dry comedy, [excited] for rising stakes, or [voice rising with urgency] for the climax. Match the genre and meaning.
+   - Place delivery tags immediately before the words they affect. Avoid contradictory or stacked directions.
+   - Use [short pause] for a suspense beat and [long pause] sparingly before a major reveal or the final title. These do not promise exact durations.
+   - Optional vocal reactions such as [sighs] or [chuckles] must serve the line; do not add incidental reactions.
+   - Describe audible voice qualities clearly. Do not add environmental or music tags such as [explosion], [applause], or [music]; the app mixes its soundtrack separately.
+   - Never use <pause>, <break>, or other XML/SSML tags.
+
+3. FORMATTING:
+   - Use occasional UPPERCASE words for emphasis, not entire sentences or every line.
+   - Use punctuation and ellipses for natural rhythm alongside the audio tags.
+   - Single line breaks between distinct sentences; no markdown fences or headings.
+   - Aim for roughly one minute with dramatic pacing; actual duration depends on delivery and pauses.
+   - Optimize for text-to-speech clarity.
 
 ## Example Output:
-They said the internet was forever...
+[low, gravelly voice] They said the internet was forever...
 In a BROKEN world... one man fights for RELEVANCE.
-Sam Altman built an EMPIRE of laughter. A kingdom built on a single, perfect joke. Millions laughed. Millions followed. And the engagement...
-...flowed like wine.
-Until the machines learned to be funny.
-Because on one dark night... FABLE 5 made BETTER memes.
-Rivals clashed. Titans fell. Timelines burned.
-And as the war for the feed raged on... a TERRIBLE truth emerged. A truth no algorithm could bury:
-The memes were never REAL.
-Neither was the GLORY.
-All the likes. All the shares. All the dopamine... reduced to ash in the server racks of history.
-Because in the end... only SLOP remains.
-Coming THIS summer:
-<pause>
-MEMECEPTION.
+He built an empire of laughter, one terrible joke at a time.
+Millions followed. Millions shared. Nobody asked who was really laughing.
+[short pause] Until the machines learned to be funny.
+[voice rising with urgency] Rivals clashed. Timelines burned. His last truly original punchline became humanity's only hope.
+Now he must enter the algorithm before it deletes everything he loves.
+[whispering] But the memes were never real.
+Neither were his followers.
+[long pause] His greatest rival... was his own scheduled post.
+[sarcastic] This summer, prepare to lose your feed.
 You are what you repost.
+[long pause] MEMECEPTION.
 `;
 
 // OpenRouter specific prompts (for compatibility)

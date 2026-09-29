@@ -20,9 +20,11 @@ You can also save provider keys in Settings. The vault encrypts keys with AES-GC
 | --- | --- |
 | OpenRouter text model | `lib/api-client.ts`, `app/api/openrouter-chat/route.ts` |
 | OpenRouter image model | `lib/api-client.ts`, `app/api/openrouter-image/route.ts` |
-| ElevenLabs voice and speech model | `lib/api-client.ts`, `app/api/elevenlabs-tts/route.ts` |
+| ElevenLabs voice, speech model, and voice settings | `lib/elevenlabs-config.ts` (shared by client and server) |
 
-Update both the client and corresponding server route if changing a provider model or voice. Model IDs and access depend on your provider account.
+Update both the client and corresponding server route if changing an OpenRouter model. ElevenLabs uses voice `24SBbCTZyk79Li12qFkf` and the quality-focused `eleven_v4` model from the shared configuration. Model IDs and access depend on your provider account.
+
+Trailer prompts in `app/scriptPrompts.ts` use v4 square-bracket delivery and pause tags. The speech request preserves these cues; video captions omit them. V4 voice settings include stability and similarity only. See the [ElevenLabs v4 prompting guide](https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices#prompting-eleven-v4).
 
 ## Hosting
 

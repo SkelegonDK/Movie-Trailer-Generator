@@ -42,6 +42,21 @@ describe("extractNarratorLines", () => {
 })
 
 describe("extractCaptionLines", () => {
+  test("removes inline and standalone audio tags without losing spoken text", () => {
+    expect(extractCaptionLines([
+      "[low, gravelly voice] In a world...",
+      "One hero. [short pause] One chance.",
+      "[long pause]",
+      '[whispering] "Coming soon."',
+    ].join("\n"))).toEqual(["In a world...", "One hero. One chance.", "Coming soon."])
+  })
+
+  test("removes tags from screenplay captions but preserves narration cues for audio", () => {
+    const script = "NARRATOR (V.O.)\n[whispering] One hero."
+    expect(extractCaptionLines(script)).toEqual(["One hero."])
+    expect(extractNarratorText(script)).toBe("[whispering] One hero.")
+  })
+
   test("uses narrator extraction for screenplay-style scripts", () => {
     const script = ["NARRATOR (V.O.)", "In a world...", '"Only one hero."'].join("\n")
     expect(extractCaptionLines(script)).toEqual(["In a world...", "Only one hero."])
@@ -93,6 +108,13 @@ describe("splitIntoCaptionChunks", () => {
 
 describe("buildCaptions", () => {
   const script = ["NARRATOR (V.O.)", "Two short words. A somewhat longer sentence here."].join("\n")
+
+  test("delivery tags do not affect caption text or word-count timing", () => {
+    const spoken = "One two.\nOne two three four."
+    const tagged = "[whispering] One two.\n[long pause]\n[excited] One two three four."
+    expect(buildCaptions(tagged, 6)).toEqual(buildCaptions(spoken, 6))
+    expect(buildCaptions("[long pause]\n[sighs]", 6)).toEqual([])
+  })
 
   test("covers the full duration from zero", () => {
     const captions = buildCaptions(script, 10, 6)

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { TTS_MODEL_ID, TTS_VOICE_ID, TTS_VOICE_SETTINGS } from "@/lib/elevenlabs-config"
 import { requestError, validateGenerationRequest } from "../_shared/request"
 
-const TTS_VOICE_ID = "FF7KdobWPaiR0vkcALHF"
 const requestSchema = z.object({ text: z.string().trim().min(1).max(10_000) })
 
 export async function POST(req: Request) {
@@ -28,14 +28,8 @@ export async function POST(req: Request) {
     },
     body: JSON.stringify({
       text: body.text,
-      model_id: "eleven_multilingual_v2",
-      voice_settings: {
-        stability: 0.6,
-        similarity_boost: 0.8,
-        style: 0.3,
-        use_speaker_boost: true,
-        speed: 1.0,
-      },
+      model_id: TTS_MODEL_ID,
+      voice_settings: TTS_VOICE_SETTINGS,
     }),
   })
 
