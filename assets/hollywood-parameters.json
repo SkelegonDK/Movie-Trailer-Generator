@@ -1,0 +1,40 @@
+{
+  "genre": ["Action", "Horror", "Comedy", "Drama", "Sci-Fi", "Romance", "Thriller", "Fantasy"],
+  "setting": [
+    "Space Station",
+    "Medieval Castle",
+    "Modern City",
+    "Post-Apocalyptic",
+    "Underwater",
+    "Desert",
+    "Forest",
+    "Cyberpunk City"
+  ],
+  "character": [
+    "Reluctant Hero",
+    "Mysterious Stranger",
+    "Brilliant Scientist",
+    "Hardened Detective",
+    "Young Prodigy",
+    "Fallen Angel",
+    "Time Traveler"
+  ],
+  "conflict": [
+    "Ancient Evil Awakens",
+    "Alien Invasion",
+    "Corporate Conspiracy",
+    "Family Secret",
+    "Race Against Time",
+    "Forbidden Love",
+    "Identity Crisis"
+  ],
+  "plotTwist": [
+    "The Hero is the Villain",
+    "It Was All a Simulation",
+    "Time Loop Revealed",
+    "Twin Switch",
+    "Memory Implant",
+    "Parallel Universe",
+    "The Dead Character Lives"
+  ]
+} 

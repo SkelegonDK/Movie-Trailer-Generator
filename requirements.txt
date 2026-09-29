@@ -1,1 +1,0 @@
-openai>=1.0.0 # For OpenAI/OpenRouter/Ollama API access 

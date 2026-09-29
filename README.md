@@ -1,79 +1,88 @@
 # Movie Trailer Generator
 
-Create hilarious movie trailers with randomly generated elements! This application uses AI to generate scripts and voiceovers for trailers based on your chosen themes.
+Turn an absurd movie idea into a trailer with an AI-written title and script, a cinematic poster, a voiceover, background music, and a downloadable video.
 
-## Installation
+This is the Next.js replacement for the original Python/Streamlit app. The old codebase is preserved on [`archive/streamlit`](https://github.com/SkelegonDK/Movie-Trailer-Generator/tree/archive/streamlit) and the [`legacy-streamlit`](https://github.com/SkelegonDK/Movie-Trailer-Generator/tree/legacy-streamlit) tag. Existing Python environments and Streamlit configuration do not apply to this version.
 
-Before you begin, you'll need to have Python installed on your computer. You can download it from [https://www.python.org/downloads/](https://www.python.org/downloads/).
+## Features
 
-1. **Install `uv`:**
+- Hollywood, Stupid, and Custom modes for genre, setting, character, conflict, and plot twist.
+- Editable movie titles and trailer scripts generated through OpenRouter.
+- Poster generation through OpenRouter, with a structured cinematic art direction prompt.
+- ElevenLabs narration mixed with the included background music in the browser.
+- Pitch-preserving music stretching to fit the voiceover and a downloadable WAV mix.
+- Vertical trailer video with poster animation, live preview, and adjustable captions.
+- MP4 export when supported by the browser, with WebM as a fallback.
 
-    This project uses `uv` for managing dependencies and virtual environments. Install it first (you might need `pip`):
+## Run locally
 
-    ```bash
-    pip install uv
-    ```
-    *(Refer to the [official uv documentation](https://github.com/astral-sh/uv) for other installation methods if needed).*
+You need Node.js 22.4 or newer, Bun 1.3 or newer, and API keys for OpenRouter and ElevenLabs. Use a modern browser with Web Audio, Canvas capture, and MediaRecorder support.
 
-2. **Install Project Dependencies:**
-
-    Navigate to the project directory in your terminal and run:
-
-    ```bash
-    uv sync
-    ```
-    This command will create a virtual environment (if one isn't active) and install all necessary Python libraries defined in `pyproject.toml`.
-
-3. **Audio Processing Requirements:**
-
-    This project uses pydub for audio processing. You'll need to have the following:
-
-    * Background music file: Place your trailer music in `assets/audio/trailer_music.mp3`
-    * The background music will be automatically stretched to match the voice-over length and mixed at a lower volume
-
-4. **Install Ollama and the required model:**
-
-    This project uses Ollama to generate the movie trailer script. Here's how to install it:
-
-    * Go to the [Ollama website](https://ollama.com/) and follow the installation instructions for your operating system.
-    * Once Ollama is installed, open your terminal (Mac) or Command Prompt (Windows) and run the following command to download the required model:
-
-        ```bash
-        ollama pull llama3.2:3b
-        ```
-
-        This command downloads the `llama3.2:3b` model, which is used to generate the movie trailer script.
-
-## ElevenLabs API Key
-
-To generate voiceovers, you'll need an API key from ElevenLabs. Here's how to get one:
-
-1. Go to the [ElevenLabs website](https://elevenlabs.io/) and create an account.
-2. Once you're logged in, go to your profile settings.
-3. You'll find your API key on the profile page.
-
-## API Key Management
-
-To securely store your ElevenLabs API key, follow these steps:
-
-1. Create a `.streamlit` directory in the root of your project, if one doesn't exist yet.
-2. Inside the `.streamlit` directory, create a file named `secrets.toml`.
-3. Add your API key to the `secrets.toml` file like this:
-
-```toml
-ELEVENLABS_API_KEY = "YOUR_API_KEY"
+```bash
+git clone https://github.com/SkelegonDK/Movie-Trailer-Generator.git
+cd Movie-Trailer-Generator
+bun install --frozen-lockfile
+cp .env.example .env.local
 ```
 
-Replace `"YOUR_API_KEY"` with your actual ElevenLabs API key.
+Fill in `.env.local`:
 
-## Usage
+```dotenv
+OPENROUTER_API=your-openrouter-key
+ELEVENLABS_API=your-elevenlabs-key
+```
 
-1. **Run the Streamlit app:**
+These exact variable names are required. The Next.js API routes use the keys on the server; do not prefix them with `NEXT_PUBLIC_`. `.env.local` is ignored by Git.
 
-    Open your terminal (Mac) or Command Prompt (Windows) and navigate to the project directory. Then, run the following command:
+```bash
+bun run dev
+```
 
-    ```bash
-    streamlit run app.py
-    ```
+Open [localhost:3000](http://localhost:3000). The [Settings page](http://localhost:3000/settings) can check whether the server keys are configured and accepted by the providers. Restart the server after changing environment variables.
 
-    This will start the Streamlit app in your web browser.
+Use environment keys for this release. The browser-vault form is still present in Settings, but loading the vault currently clears saved keys, so browser key persistence is unavailable.
+
+## Make a trailer
+
+1. Choose a parameter mode and fill in or randomize the movie elements.
+2. Generate a title and script, then edit the text as needed.
+3. Generate the narration and music mix. Preview or download the audio.
+4. Generate the movie poster.
+5. Preview the video, adjust caption size, alignment, position, capitalization, and words per caption, then generate and download it.
+
+Video rendering happens in the browser in real time. Keep the tab open until export finishes. Captions are estimated from the script and audio duration rather than provider word timestamps. Download outputs you want to keep before reloading the page.
+
+## Development
+
+```bash
+bun test           # Mocked API tests, captions, and audio time stretching
+bun run build      # Production build
+bun run start      # Serve the production build
+bunx tsc --noEmit   # Independent TypeScript check
+```
+
+The production build checks TypeScript. Run the standalone type check after an initial build has generated Next.js type declarations.
+
+| Path | Purpose |
+| --- | --- |
+| `app/` | Next.js pages, prompts, and server API routes |
+| `components/` | Trailer workflow and reusable UI |
+| `lib/` | API client, audio processing, captions, video rendering, and state |
+| `assets/` | Movie parameter lists and artwork |
+| `public/assets/` | Browser-served music and font |
+| `tests/` | Bun test suite |
+| `documentation/` | Setup details and design notes |
+
+The app uses Next.js, React, TypeScript, Tailwind CSS, Radix UI, and Zustand. Bun is the package manager and test runner.
+
+## Configuration and hosting
+
+See [environment setup](documentation/environment-setup.md) for provider configuration. No Python runtime, Ollama service, database, or authentication provider is required.
+
+This release is intended for local or access-controlled use. Generation routes have no authentication or rate limiting; anyone who can access a hosted instance can make requests using its server API keys. Provider usage may incur charges. A deployment needs a Next.js server runtime, not a static-only host.
+
+Provider model and voice IDs are configured in `lib/api-client.ts` and `app/api/`. Availability depends on your provider account. Automated tests mock provider calls and do not validate live generation.
+
+## License
+
+[MIT](LICENSE). The original public repository's license is retained.

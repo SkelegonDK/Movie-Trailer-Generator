@@ -1,30 +1,121 @@
-# Status
+# Next Phase: Frontend Polish & Refactor
 
-## Current Goals
+- [✅] [T54] Refactor page.tsx "God Component" [Complexity: 7/10] [Priority: High] [Status: Complete]
+- [✅] [T55] Centralize State Management with Zustand [Complexity: 5/10] [Priority: High] [Status: Complete]
+- [✅] [T59] Fix build & runtime errors post-refactor [Complexity: 5/10] [Priority: High] [Status: Complete]
+- [✅] [T60] Refactor ParameterSelection component [Complexity: 6/10] [Priority: Medium] [Status: Complete]
+  - Context: The parameter selection cards were simple inputs. They have been refactored into a reusable `<ParameterCard>` component that dynamically renders dropdowns or inputs based on the mode.
+  - Acceptance Criteria: Dropdown menus are used for "Hollywood" and "Stupid" modes. Individual parameter randomization is functional.
+- [✅] [T66] Add Clerk Authentication to Next.js App Router [Complexity: 6/10] [Priority: High] [Status: Complete]
+  - Context: Implement modern authentication system using Clerk with Next.js App Router, following latest best practices and ensuring build compatibility.
+  - Acceptance Criteria: Authentication works with modal sign-in/up, protects /keys page, includes graceful fallbacks, builds successfully without API keys.
+- [ ] [T67] Integrate user-specific Listen page (view/play creations) [Complexity: 6/10] [Priority: High] [Status: Pending]
+  - Context: The `/listen` page should be personalized per signed-in user, listing and playing their scripts, voiceovers, images, and videos from Supabase.
+  - Acceptance criteria:
+    - Fetches current user’s scripts, voiceovers, images, and videos.
+    - Provides playable audio and viewable images/videos with metadata.
+    - Paginates or lazy-loads items; shows empty states and loading.
+    - Access restricted to signed-in users via middleware.
+  - Dependencies: [T66]
+  - Subtasks: (for complexity > 5/10)
+    - [ ] [T67.1] List user scripts, voiceovers, images, videos [Complexity: 2/10]
+    - [ ] [T67.2] Implement media players and viewers [Complexity: 2/10]
+    - [ ] [T67.3] Add pagination/lazy loading and empty/loading states [Complexity: 2/10]
+- [ ] [T68] Fix Supabase URL/key error using Supabase MCP [Complexity: 5/10] [Priority: High] [Status: Pending]
+  - Context: Client bundle imports server-only Supabase code, causing `validateSupabaseUrl` errors when env vars are missing. Use Supabase MCP to verify project/env and correct client/server boundaries.
+  - Acceptance criteria:
+    - No client-side `validateSupabaseUrl` errors.
+    - `lib/supabase.ts` not imported in client routes.
+    - NEXT_PUBLIC_SUPABASE_URL/ANON_KEY validated via MCP and documented.
+    - Build and dev server run without Supabase runtime errors.
+  - Dependencies: [T66]
+  - Subtasks:
+    - [✓] [T68.1] Extract client-safe constants from server services [Complexity: 2/10]
+    - [ ] [T68.2] Validate Supabase project URL/key via MCP [Complexity: 2/10]
+    - [ ] [T68.3] Document env setup and troubleshooting [Complexity: 1/10]
+- [ ] [T56] General UI/UX Polish [Complexity: 4/10] [Priority: Medium] [Status: Pending]
+- [ ] [T62] Display generated image based on script or 'Generate poster data' [Complexity: 5/10] [Priority: High] [Status: Pending]
+  - Context: After a script is generated or 'Generate poster data' is triggered, the corresponding image should be displayed to the user.
+  - Acceptance criteria:
+    - The generated image is displayed prominently on the UI.
+    - The image updates dynamically when new script or poster data is available.
+    - Appropriate loading indicators are shown while the image is being generated or fetched.
+- [✅] [T57] Build `/listen` Page [Complexity: 3/10] [Priority: Medium] [Status: Complete]
+- [✅] [T58] Isolate Poster Generation Flow [Complexity: 3/10] [Priority: Medium] [Status: Complete]
+- [ ] [T61] Implement model selector with fuzzy search and free filter in sidebar [Complexity: 6/10] [Priority: Medium] [Status: Pending]
+  - Context: Users need to easily select different AI models for generation tasks, with the ability to quickly find models using search and filter options.
+  - Acceptance criteria:
+    - A model selector dropdown is available in the sidebar.
+    - The selector includes a fuzzy search functionality to filter models by name.
+    - A free-text filter allows users to narrow down model choices based on custom criteria.
+    - Selected model is clearly displayed and used for subsequent generation tasks.
 
-- Fix openrouter integration.
-- pass all tests
+# Current Priority: Poster Generation
 
-## Developer Tasks (Require approval to modify)
+- [✅] [T51] Simplify Poster Prompt Generation Logic [Complexity: 3/10] [Priority: High] [Status: Complete]
+- [✅] [T52] Implement OpenAI Image-1 Model Image Generation [Complexity: 4/10] [Priority: High] [Status: Complete]
+- [✅] [T50] Debug and Fix Poster Generation Issues [Complexity: 4/10] [Priority: High] [Status: Complete]
+- [✅] [T49] Add Toast Notifications for Poster Generation Steps [Complexity: 2/10] [Priority: High] [Status: Complete]
 
-- [ ] Task assigned to developer
+# Next Phase: Testing & Documentation
 
-## In Progress
+- [ ] [T32] Implement centralized Bun test suite for core API and function logic [Complexity: 6/10] [Priority: High] [Status: In-Progress]
+  - Subtasks:
+    - [✓] [T32.2] Add tests for script generation logic (mocked API)
+    - [✓] [T32.3] Add tests for title generation logic (mocked API)
+    - [✓] [T32.4] Add tests for TTS logic (mocked API)
+    - [✓] [T32.5] Add tests for poster generation logic (mocked API)
+- [ ] [T33] Add tests for user data integrity (saving, loading, caching parameters and states) [Complexity: 7/10] [Priority: High] [Status: Pending]
+  - Context: Ensure that user-specific parameters and application states are correctly saved, loaded, and cached without corruption or loss.
+  - Acceptance criteria:
+    - Saving user data preserves all relevant parameters and states.
+    - Loading user data accurately restores previously saved parameters and states.
+    - Caching mechanisms maintain data consistency and integrity.
+    - Edge cases like concurrent saves or unexpected application termination are handled gracefully without data loss.
+  - Dependencies: [T55]
+  - Subtasks:
+    - [ ] [T33.1] Test saving of individual parameters and full state. [Complexity: 3/10]
+    - [ ] [T33.2] Test loading of individual parameters and full state. [Complexity: 3/10]
+    - [ ] [T33.3] Test caching behavior and data consistency. [Complexity: 4/10]
+    - [ ] [T33.4] Test data integrity under various scenarios (e.g., rapid changes, application restart). [Complexity: 4/10]
+- [ ] [T63] Set Up Testing Infrastructure and Configuration [Complexity: 3/10] [Priority: High] [Status: Pending]
+  - Context: Establish proper testing infrastructure with Bun test configuration, Playwright setup, and CI/CD integration for comprehensive test coverage.
+  - Acceptance criteria:
+    - Bun test configuration is properly set up with appropriate timeouts and preload scripts.
+    - Playwright configuration includes proper base URL and test directory structure.
+    - Test utilities and helpers are available for common testing patterns.
+    - CI/CD pipeline includes automated test execution.
+  - Dependencies: []
+- [ ] [T64] Create Bun Unit Tests for Core API Functions [Complexity: 6/10] [Priority: High] [Status: Pending]
+  - Context: Implement comprehensive unit tests using Bun's built-in test runner for all core API functions including script generation, title generation, TTS, and poster generation.
+  - Acceptance criteria:
+    - All API client functions have comprehensive test coverage using mocks.
+    - Tests avoid external API costs by using mocked responses.
+    - Tests are deterministic and reliable for CI/CD pipeline.
+    - Test coverage includes both success and error scenarios.
+  - Dependencies: [T63]
+  - Subtasks:
+    - [ ] [T64.1] Create test utilities and mock helpers [Complexity: 2/10]
+    - [ ] [T64.2] Add tests for script generation API functions [Complexity: 3/10]
+    - [ ] [T64.3] Add tests for title generation API functions [Complexity: 3/10]
+    - [ ] [T64.4] Add tests for TTS API functions [Complexity: 3/10]
+    - [ ] [T64.5] Add tests for poster generation API functions [Complexity: 3/10]
+- [ ] [T65] Create Playwright UI Tests for Complete User Workflow [Complexity: 7/10] [Priority: High] [Status: Pending]
+  - Context: Implement end-to-end UI tests using Playwright to test the complete user workflow including parameter selection, script generation, poster generation, and audio playback.
+  - Acceptance criteria:
+    - Complete user journey tests cover parameter selection to final output.
+    - Tests include both happy path and error scenarios.
+    - Tests are stable and reliable for CI/CD pipeline.
+    - Tests cover responsive design and accessibility.
+  - Dependencies: [T63]
+  - Subtasks:
+    - [ ] [T65.1] Set up Playwright test environment and page objects [Complexity: 3/10]
+    - [ ] [T65.2] Create tests for parameter selection workflow [Complexity: 4/10]
+    - [ ] [T65.3] Create tests for script generation workflow [Complexity: 4/10]
+    - [ ] [T65.4] Create tests for poster generation workflow [Complexity: 4/10]
+    - [ ] [T65.5] Create tests for audio playback workflow [Complexity: 3/10]
 
-## Completed
-- [x] Add pydub to the requirements.
-- [x] Update the documentation to explain how to use Streamlit's secrets management
-- [x] Implement audio stretching using pydub
-- [x] Update documentation for audio processing requirements
-- [x] Remove ffmpeg dependency in favor of pydub
-- [x] Integrate OpenRouter API for title and script generation.
-- [x] Add UI toggle for selecting between local (Ollama) and online (OpenRouter) models.
-- [x] Fix bugs in title generation response handling for Ollama and OpenRouter.
-- [x] Improve error handling for OpenRouter API calls.
-- [x] Add unit tests for OpenRouter functions in app.py.
-- [x] Update prompts for clarity and consistency.
-- [x] Add a mechanism to check that the movie title output is valid.
-- [x] Add `assets/audio/trailer_music.mp3` to the repository.
+# Deferred Tasks
 
-## Next Up
-- [ ] Add image prompt generation as a future feature
+- [ ] [T36] Implement animations and transitions between app sections and pages [Complexity: 4/10] [Priority: Medium] [Status: Deferred]
+- [ ] [T53] Validate and Test Poster Generation Flow [Complexity: 3/10] [Priority: High] [Status: Pending]

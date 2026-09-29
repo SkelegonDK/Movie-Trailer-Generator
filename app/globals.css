@@ -1,0 +1,144 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@font-face {
+  font-family: "Frick";
+  src: url("/assets/Frick0.3-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --background: #181a20;
+  --foreground: #ffffff;
+  --card: #22242c;
+  --card-foreground: #e0e0e0;
+  --primary: #ff3366;
+  --primary-foreground: #ffffff;
+  --secondary: #00c2ff;
+  --secondary-foreground: #ffffff;
+  --accent: #ffd600;
+  --accent-foreground: #000000;
+  --destructive: #ff3b30;
+  --destructive-foreground: #ffffff;
+  --success: #4cd964;
+  --success-foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: rgba(255, 255, 255, 0.7);
+  --popover: #181a20;
+  --popover-foreground: #ffffff;
+  --input: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.12);
+  --ring: #ff3366;
+  --radius: 1.25rem;
+
+  --primary-accent: var(--primary);
+  --secondary-accent: var(--secondary);
+  --highlight-accent: var(--accent);
+  --error-accent: var(--destructive);
+  --success-accent: var(--success);
+
+  --text-on-primary-accent: #ffffff;
+  --text-on-secondary-accent: #ffffff;
+  --text-on-highlight-accent: #000000;
+  --text-on-error-accent: #ffffff;
+  --text-on-success-accent: #ffffff;
+
+  --primary-accent-shadow-dark: #cc2952;
+  --secondary-accent-shadow-dark: #009bcc;
+  --highlight-accent-shadow-dark: #cca300;
+  --error-accent-shadow-dark: #cc2f26;
+  --success-accent-shadow-dark: #3dae50;
+
+  --primary-accent-text-focus-shadow: rgba(255, 51, 102, 0.5);
+  --secondary-accent-text-focus-shadow: rgba(0, 194, 255, 0.5);
+  --highlight-accent-text-focus-shadow: rgba(0, 0, 0, 0.3);
+  --error-accent-text-focus-shadow: rgba(255, 59, 48, 0.5);
+  --success-accent-text-focus-shadow: rgba(76, 217, 100, 0.5);
+
+  --skeu-highlight-soft-inset: rgba(255, 255, 255, 0.15);
+  --skeu-highlight-strong-inset: rgba(255, 255, 255, 0.25);
+  --skeu-shadow-soft-gradient-overlay: rgba(0, 0, 0, 0.1);
+
+  --card-genre-bg: rgba(255, 51, 102, 0.8);
+  --card-setting-bg: rgba(0, 194, 255, 0.8);
+  --card-character-bg: rgba(255, 214, 0, 0.8);
+  --card-conflict-bg: rgba(230, 46, 92, 0.8);
+  --card-plot-twist-bg: rgba(0, 169, 230, 0.8);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --color-dialog-background: #22242c;
+  --color-card-genre-bg: var(--card-genre-bg);
+  --color-card-setting-bg: var(--card-setting-bg);
+  --color-card-character-bg: var(--card-character-bg);
+  --color-card-conflict-bg: var(--card-conflict-bg);
+  --color-card-plot-twist-bg: var(--card-plot-twist-bg);
+
+  --color-primary-accent: var(--primary-accent);
+  --color-secondary-accent: var(--secondary-accent);
+  --color-highlight-accent: var(--highlight-accent);
+  --color-error-accent: var(--error-accent);
+  --color-success-accent: var(--success-accent);
+  --color-text-on-primary-accent: var(--text-on-primary-accent);
+  --color-text-on-secondary-accent: var(--text-on-secondary-accent);
+  --color-text-on-highlight-accent: var(--text-on-highlight-accent);
+  --color-text-on-error-accent: var(--text-on-error-accent);
+  --color-text-on-success-accent: var(--text-on-success-accent);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: 0.375rem;
+  --radius-lg: var(--radius);
+
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
+  --font-headline: "Frick", var(--font-geist), sans-serif;
+
+  --blur-xs: 2px;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-mono);
+  }
+}
+
+.headline {
+  font-family: "Frick", var(--font-geist), sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@utility rounded-skeu {
+  border-radius: 0.375em !important;
+}
