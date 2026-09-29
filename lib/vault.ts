@@ -33,12 +33,20 @@ async function idbGet<T>(db: IDBDatabase, key: IDBValidKey): Promise<T | undefin
   })
 }
 
-async function idbPut(db: IDBDatabase, key: IDBValidKey, value: unknown): Promise<void> {
+async function storeMasterKey(db: IDBDatabase, candidate: CryptoKey): Promise<CryptoKey> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite")
-    tx.objectStore(STORE_NAME).put(value, key)
-    tx.oncomplete = () => resolve()
+    const store = tx.objectStore(STORE_NAME)
+    const req = store.get(MASTER_KEY_ID)
+    let key = candidate
+    req.onsuccess = () => {
+      // Keep the first key if two tabs initialize the vault together.
+      if (req.result) key = req.result
+      else store.put(candidate, MASTER_KEY_ID)
+    }
+    tx.oncomplete = () => resolve(key)
     tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error ?? new Error("Vault transaction aborted"))
   })
 }
 
@@ -48,16 +56,22 @@ async function getMasterKey(): Promise<CryptoKey> {
   if (masterKeyPromise) return masterKeyPromise
   masterKeyPromise = (async () => {
     const db = await openDb()
-    const existing = await idbGet<CryptoKey>(db, MASTER_KEY_ID)
-    if (existing) return existing
-    const key = await crypto.subtle.generateKey(
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["encrypt", "decrypt"],
-    )
-    await idbPut(db, MASTER_KEY_ID, key)
-    return key
-  })()
+    try {
+      const existing = await idbGet<CryptoKey>(db, MASTER_KEY_ID)
+      if (existing) return existing
+      const key = await crypto.subtle.generateKey(
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"],
+      )
+      return await storeMasterKey(db, key)
+    } finally {
+      db.close()
+    }
+  })().catch((error) => {
+    masterKeyPromise = null
+    throw error
+  })
   return masterKeyPromise
 }
 
@@ -76,8 +90,30 @@ function fromBase64(b64: string): Uint8Array {
 
 export async function loadKeys(): Promise<StoredKeys> {
   if (!isBrowser()) return {}
-  localStorage.removeItem(LS_KEY)
-  return {}
+  const stored = localStorage.getItem(LS_KEY)
+  if (!stored) return {}
+  try {
+    const combined = fromBase64(stored)
+    const key = await getMasterKey()
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: combined.slice(0, 12) },
+      key,
+      combined.slice(12),
+    )
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(plaintext))
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("Invalid vault data")
+    }
+    const keys: StoredKeys = {}
+    for (const service of ["openrouter", "elevenlabs"] as const) {
+      const value = (parsed as Record<string, unknown>)[service]
+      if (value !== undefined && typeof value !== "string") throw new Error("Invalid vault key")
+      if (typeof value === "string" && value.trim()) keys[service] = value
+    }
+    return keys
+  } catch {
+    throw new Error("Could not read saved API keys. Clear the vault in Settings and save your keys again.")
+  }
 }
 
 export async function saveKeys(keys: StoredKeys): Promise<void> {

@@ -93,11 +93,8 @@ export interface ButtonProps
  * A customizable button component with motion animations from motion/react-client.
  * Provides visual styles (variants) and sizes. 
  * Supports `asChild` for composition.
- * Includes hover (scale: 1.05) and tap (scale: 0.95) animations.
- * 
- * When `asChild` is false, only essential props (`children`, `disabled`, `type`, `onClick`)
- * and animation props are passed to the underlying `motion.button` to ensure type compatibility.
- * Other standard HTMLButtonAttributes may not be applied in this mode.
+ * Includes hover (scale: 0.98) and tap (scale: 0.95) animations.
+ * Forwards standard button attributes to the underlying button or child.
  */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, loading = false, ...otherProps }, ref) => {

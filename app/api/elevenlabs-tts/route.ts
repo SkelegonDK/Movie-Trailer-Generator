@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
+import { requestError, validateGenerationRequest } from "../_shared/request"
 
 const TTS_VOICE_ID = "FF7KdobWPaiR0vkcALHF"
+const requestSchema = z.object({ text: z.string().trim().min(1).max(10_000) })
 
 export async function POST(req: Request) {
+  const rejected = validateGenerationRequest(req)
+  if (rejected) return rejected
   const key = process.env.ELEVENLABS_API?.trim()
   if (!key) {
     return NextResponse.json(
@@ -11,11 +16,9 @@ export async function POST(req: Request) {
     )
   }
 
-  const body = (await req.json().catch(() => null)) as { text?: string } | null
-
-  if (!body?.text?.trim()) {
-    return NextResponse.json({ detail: "text is required" }, { status: 400 })
-  }
+  const parsed = requestSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return requestError("text must contain 1–10,000 characters")
+  const body = parsed.data
 
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${TTS_VOICE_ID}`, {
     method: "POST",

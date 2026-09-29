@@ -47,7 +47,7 @@ const KEYS: KeyMeta[] = [
 ]
 
 export default function SettingsPage() {
-  const { keys, loaded, setKey, clear } = useApiKeys()
+  const { keys, loaded, error: vaultError, saveAll, clear } = useApiKeys()
   const { toast } = useToast()
   const [draft, setDraft] = useState<Record<KeyService, string>>({
     openrouter: "",
@@ -65,6 +65,7 @@ export default function SettingsPage() {
     setCheckingEnv(true)
     try {
       const res = await fetch("/api/keys-status")
+      if (!res.ok) throw new Error("Could not check environment keys")
       setEnvStatus((await res.json()) as EnvStatusResponse)
     } catch {
       setEnvStatus(null)
@@ -88,13 +89,14 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      for (const { id } of KEYS) {
-        const value = draft[id].trim()
-        if (value) await setKey(id, value)
-      }
+      await saveAll({
+        ...keys,
+        ...(draft.openrouter.trim() ? { openrouter: draft.openrouter.trim() } : {}),
+        ...(draft.elevenlabs.trim() ? { elevenlabs: draft.elevenlabs.trim() } : {}),
+      })
       toast({
         title: "Keys encrypted and saved",
-        description: "They stay on this device and decrypt only in this browser.",
+        description: "Stored encrypted on this device and sent to the relevant provider when you generate content.",
       })
     } catch (error) {
       toast({
@@ -108,9 +110,13 @@ export default function SettingsPage() {
   }
 
   const handleClear = async () => {
-    await clear()
-    setDraft({ openrouter: "", elevenlabs: "" })
-    toast({ title: "Vault cleared", description: "All stored API keys were removed." })
+    try {
+      await clear()
+      setDraft({ openrouter: "", elevenlabs: "" })
+      toast({ title: "Vault cleared", description: "All stored API keys were removed." })
+    } catch (error) {
+      toast({ title: "Could not clear keys", description: error instanceof Error ? error.message : "Unknown error", variant: "destructive" })
+    }
   }
 
   return (
@@ -119,7 +125,8 @@ export default function SettingsPage() {
         <h1 className="headline text-5xl font-bold">Settings</h1>
         <p className="text-muted-foreground">
           Your API keys are encrypted with AES-GCM and stored locally. The decryption key is a
-          non-extractable <code>CryptoKey</code> held in IndexedDB — keys never leave this browser.
+          non-extractable <code>CryptoKey</code> held in IndexedDB. When you generate content,
+          the relevant API key is sent directly to OpenRouter or ElevenLabs.
         </p>
       </div>
 
@@ -154,7 +161,7 @@ export default function SettingsPage() {
                 )
               })
             : (
-              <span className="text-sm text-muted-foreground">Checking environment keys…</span>
+              <span className="text-sm text-muted-foreground">{checkingEnv ? "Checking environment keys…" : "Could not check environment keys. Try again."}</span>
             )}
           <Button variant="outline" size="sm" onClick={checkEnv} disabled={checkingEnv} className="self-start">
             <RefreshCw className={`mr-2 h-4 w-4 ${checkingEnv ? "animate-spin" : ""}`} />
@@ -173,6 +180,7 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
+          {vaultError && <p role="alert" className="text-sm text-destructive">{vaultError}</p>}
           {KEYS.map((k) => (
             <div key={k.id} className="flex flex-col gap-2">
               <div className="flex items-center justify-between">

@@ -1,4 +1,5 @@
 import { describe, test, expect } from "bun:test"
+import { extractNarratorText } from "../lib/audio-utils"
 import {
   extractNarratorLines,
   extractCaptionLines,
@@ -151,5 +152,22 @@ describe("getActiveCaption", () => {
   test("returns null outside of all captions", () => {
     expect(getActiveCaption(captions, -1)).toBeNull()
     expect(getActiveCaption(captions, 10)).toBeNull()
+  })
+})
+
+
+describe("narration regressions", () => {
+  test("keeps unquoted spoken text alongside quoted lines", () => {
+    expect(extractCaptionLines('In a world.\n"One hero."\nComing soon.')).toEqual([
+      "In a world.", "One hero.", "Coming soon.",
+    ])
+  })
+  test("does not duplicate quoted narration following a marker", () => {
+    expect(extractNarratorLines('NARRATOR (V.O.)\n"One hero."')).toEqual(["One hero."])
+  })
+  test("repeated narrator markers use their own following line", () => {
+    expect(extractNarratorText("NARRATOR (V.O.)\nFirst line.\nNARRATOR (V.O.)\nSecond line.")).toBe(
+      "First line. ... Second line.",
+    )
   })
 })

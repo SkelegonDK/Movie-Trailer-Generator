@@ -1,3 +1,5 @@
+import { extractNarratorLines } from "./captions"
+
 /**
  * Extracts narrator voiceover lines from a movie script.
  * It looks for lines marked with "NARRATOR (V.O.)" or direct quoted narration.
@@ -10,33 +12,7 @@
  * // Note: The example output might slightly differ based on exact line break handling, this illustrates the concept.
  */
 export function extractNarratorText(script: string): string {
-  // Extract only the narrator voiceover lines from the script
-  const lines = script.split("\n")
-  const narratorLines: string[] = []
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed.includes("NARRATOR (V.O.)") || trimmed.includes("NARRATOR (V.O)")) {
-      // Get the next line which should contain the actual narration
-      const nextLineIndex = lines.indexOf(line) + 1
-      if (nextLineIndex < lines.length) {
-        const narratorText = lines[nextLineIndex].trim()
-        if (
-          narratorText &&
-          !narratorText.includes("(") &&
-          !narratorText.includes("FADE") &&
-          !narratorText.includes("CUT")
-        ) {
-          narratorLines.push(narratorText)
-        }
-      }
-    } else if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-      // Direct quoted narration
-      narratorLines.push(trimmed.slice(1, -1))
-    }
-  }
-
-  return narratorLines.join(" ... ")
+  return extractNarratorLines(script).join(" ... ")
 }
 
 /**
@@ -110,7 +86,7 @@ export interface AudioTrack {
 
 /**
  * Saves an audio track's metadata to sessionStorage.
- * Keeps a maximum of 20 tracks, with the newest added to the beginning.
+ * Keeps a maximum of 20 tracks, with the newest first. Storage failures are ignored.
  * @param {AudioTrack} track - The audio track metadata to save.
  * @example
  * const newTrack: AudioTrack = {
@@ -121,35 +97,48 @@ export interface AudioTrack {
  *   timestamp: new Date(),
  *   script: "NARRATOR (V.O.)\nIn a world...",
  *   parameters: { genre: "Action" },
- *   backgroundMusicId: "dramatic-epic"
+ *   backgroundMusicId: "trailer-music"
  * };
  * saveAudioTrack(newTrack);
  */
 export function saveAudioTrack(track: AudioTrack): void {
-  const savedTracks = sessionStorage.getItem("generated-audio-tracks")
-  const tracks = savedTracks ? JSON.parse(savedTracks) : []
-
-  // Add new track to the beginning of the array
-  tracks.unshift(track)
-
-  // Keep only the last 20 tracks to prevent sessionStorage from getting too large
-  const limitedTracks = tracks.slice(0, 20)
-
-  sessionStorage.setItem("generated-audio-tracks", JSON.stringify(limitedTracks))
+  // History is optional: a storage failure must not discard generated audio.
+  try {
+    const tracks = [track, ...getSavedAudioTracks()].slice(0, 20)
+    sessionStorage.setItem("generated-audio-tracks", JSON.stringify(tracks))
+  } catch {
+    // The current audio remains playable when storage is full or unavailable.
+  }
 }
 
 /**
  * Retrieves all saved audio track metadata from sessionStorage.
- * @returns {AudioTrack[]} An array of saved audio tracks, or an empty array if none are found.
+ * @returns {AudioTrack[]} Valid saved tracks with Date timestamps, or an empty array when storage is unavailable.
  * @example
- * const allTracks = getAudioTracks();
+ * const allTracks = getSavedAudioTracks();
  * if (allTracks.length > 0) {
  *   console.log(`Found ${allTracks.length} saved tracks. Latest: ${allTracks[0].title}`);
  * }
  */
 export function getSavedAudioTracks(): AudioTrack[] {
-  const savedTracks = sessionStorage.getItem("generated-audio-tracks")
-  return savedTracks ? JSON.parse(savedTracks) : []
+  try {
+    const savedTracks: unknown = JSON.parse(sessionStorage.getItem("generated-audio-tracks") ?? "[]")
+    if (!Array.isArray(savedTracks)) return []
+    return savedTracks.flatMap((track) => {
+      if (
+        !track || typeof track !== "object" ||
+        typeof track.id !== "string" || typeof track.title !== "string" ||
+        typeof track.url !== "string" || typeof track.script !== "string" ||
+        typeof track.backgroundMusicId !== "string" ||
+        typeof track.duration !== "number" || !Number.isFinite(track.duration) || track.duration < 0 ||
+        typeof track.timestamp !== "string"
+      ) return []
+      const timestamp = new Date(track.timestamp)
+      return Number.isFinite(timestamp.getTime()) ? [{ ...track, timestamp } as AudioTrack] : []
+    })
+  } catch {
+    return []
+  }
 }
 
 /**
@@ -159,10 +148,12 @@ export function getSavedAudioTracks(): AudioTrack[] {
  * deleteAudioTrack("some-track-id");
  */
 export function deleteAudioTrack(id: string): void {
-  const savedTracks = sessionStorage.getItem("generated-audio-tracks")
-  let tracks: AudioTrack[] = savedTracks ? JSON.parse(savedTracks) : []
-  tracks = tracks.filter(track => track.id !== id)
-  sessionStorage.setItem("generated-audio-tracks", JSON.stringify(tracks))
+  try {
+    const tracks = getSavedAudioTracks().filter((track) => track.id !== id)
+    sessionStorage.setItem("generated-audio-tracks", JSON.stringify(tracks))
+  } catch {
+    // Storage can be disabled independently of audio playback.
+  }
 }
 
 /**

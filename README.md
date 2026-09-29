@@ -11,7 +11,7 @@ This is the Next.js replacement for the original Python/Streamlit app. The old c
 - Poster generation through OpenRouter, with a structured cinematic art direction prompt.
 - ElevenLabs narration mixed with the included background music in the browser.
 - Pitch-preserving music stretching to fit the voiceover and a downloadable WAV mix.
-- Vertical trailer video with poster animation, live preview, and adjustable captions.
+- Vertical trailer video with a poster background, live preview, and adjustable captions.
 - MP4 export when supported by the browser, with WebM as a fallback.
 
 ## Run locally
@@ -40,7 +40,7 @@ bun run dev
 
 Open [localhost:3000](http://localhost:3000). The [Settings page](http://localhost:3000/settings) can check whether the server keys are configured and accepted by the providers. Restart the server after changing environment variables.
 
-Use environment keys for this release. The browser-vault form is still present in Settings, but loading the vault currently clears saved keys, so browser key persistence is unavailable.
+Alternatively, save your own keys in Settings. They are encrypted at rest in this browser using AES-GCM, with a non-extractable key stored in IndexedDB. Browser keys take precedence for each provider and are sent directly to that provider when generating content. A provider without a saved browser key uses the server environment key. Browser storage requires HTTPS or localhost; clearing browser data removes saved keys.
 
 ## Make a trailer
 
@@ -55,7 +55,7 @@ Video rendering happens in the browser in real time. Keep the tab open until exp
 ## Development
 
 ```bash
-bun test           # Mocked API tests, captions, and audio time stretching
+bun test           # Automated tests; provider calls are mocked
 bun run build      # Production build
 bun run start      # Serve the production build
 bunx tsc --noEmit   # Independent TypeScript check
@@ -71,7 +71,7 @@ The production build checks TypeScript. Run the standalone type check after an i
 | `assets/` | Movie parameter lists and artwork |
 | `public/assets/` | Browser-served music and font |
 | `tests/` | Bun test suite |
-| `documentation/` | Setup details and design notes |
+| `documentation/` | Setup details and implemented visual styles |
 
 The app uses Next.js, React, TypeScript, Tailwind CSS, Radix UI, and Zustand. Bun is the package manager and test runner.
 

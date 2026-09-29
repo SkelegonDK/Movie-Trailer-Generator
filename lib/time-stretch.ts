@@ -4,7 +4,7 @@
  * The stretcher uses WSOLA (Waveform Similarity Overlap-Add). WSOLA stretches
  * or compresses audio in the time domain by repeating or skipping short,
  * highly-correlated frames instead of resampling, so the pitch and formants
- * of the source material are preserved exactly.
+ * of the source material are approximately preserved.
  */
 
 /** Tempo (input length / output length) bounds beyond which WSOLA artifacts become noticeable. */
@@ -47,7 +47,7 @@ function downmixToMono(channels: Float32Array[]): Float32Array {
 /**
  * WSOLA time-stretcher. Returns `numChannels` output arrays of exactly
  * `targetLengthSamples`, with the input mapped through `tempo`
- * (tempo > 1 compresses, tempo < 1 stretches). Pitch and formants are preserved.
+ * (tempo > 1 compresses, tempo < 1 stretches). Pitch and formants are approximately preserved.
  */
 function wsolaStretch(channels: Float32Array[], tempo: number, targetLengthSamples: number): Float32Array[] {
   const numChannels = channels.length
@@ -103,7 +103,8 @@ function wsolaStretch(channels: Float32Array[], tempo: number, targetLengthSampl
 /**
  * Searches for the WSOLA alignment delta that best matches the incoming
  * analysis frame against the audio already present in the output overlap
- * region. Computed on the mono downmix and shared by all channels.
+ * region of the first output channel. The input uses a mono downmix and
+ * the chosen delta is shared by all channels.
  */
 function findBestDelta(
   mono: Float32Array,

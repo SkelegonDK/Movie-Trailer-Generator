@@ -33,8 +33,9 @@ next-env.d.ts
 # Claude Code local settings
 /.claude/
 
-# Agent documentation (private, not for the public repo)
+# Local agent instructions and temporary artifacts
 /.planning/
+/.scratch/
 /CLAUDE.md
 AGENTS.md
 /.cursor/

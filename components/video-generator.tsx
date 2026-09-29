@@ -137,6 +137,7 @@ export function VideoGenerator() {
   const previewSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const previewStartRef = useRef(0)
   const rafRef = useRef(0)
+  const renderAbortRef = useRef<AbortController | null>(null)
 
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
   const [previewTime, setPreviewTime] = useState(0)
@@ -180,6 +181,7 @@ export function VideoGenerator() {
         if (!cancelled) drawPreviewFrame(previewTime)
       })
       .catch(() => {
+        if (cancelled) return
         posterImageRef.current = null
       })
     return () => {
@@ -197,15 +199,39 @@ export function VideoGenerator() {
     return () => {
       cancelAnimationFrame(rafRef.current)
       previewSourceRef.current?.stop()
+      previewSourceRef.current?.disconnect()
     }
   }, [])
 
   const stopPreview = useCallback(() => {
     cancelAnimationFrame(rafRef.current)
     previewSourceRef.current?.stop()
+    previewSourceRef.current?.disconnect()
     previewSourceRef.current = null
     setIsPreviewPlaying(false)
   }, [])
+
+  // Output belongs to these exact inputs; discard it when any input changes.
+  useEffect(() => {
+    setRenderedVideo(null)
+    setVideoGenerationStatus({ show: false, status: "idle", message: "", progress: 0 })
+    return () => {
+      renderAbortRef.current?.abort()
+      renderAbortRef.current = null
+      setIsGeneratingVideo(false)
+    }
+  }, [posterUrl, trailerAudioBuffer, currentScript, captionStyle, setVideoGenerationStatus, setIsGeneratingVideo])
+
+  useEffect(() => {
+    stopPreview()
+    setPreviewTime(0)
+  }, [trailerAudioBuffer, stopPreview])
+
+  useEffect(() => {
+    return () => {
+      if (renderedVideo) URL.revokeObjectURL(renderedVideo.url)
+    }
+  }, [renderedVideo])
 
   const startPreview = useCallback(() => {
     if (!trailerAudioBuffer) return
@@ -218,8 +244,6 @@ export function VideoGenerator() {
     audioCtx.resume()
 
     stopPreview()
-    setRenderedVideo(null)
-    setVideoGenerationStatus({ show: false, status: "idle", message: "", progress: 0 })
 
     const source = audioCtx.createBufferSource()
     source.buffer = trailerAudioBuffer
@@ -247,10 +271,12 @@ export function VideoGenerator() {
     }
     setIsPreviewPlaying(true)
     rafRef.current = requestAnimationFrame(tick)
-  }, [trailerAudioBuffer, audioDuration, previewTime, drawPreviewFrame, stopPreview, setVideoGenerationStatus])
+  }, [trailerAudioBuffer, audioDuration, previewTime, drawPreviewFrame, stopPreview])
 
   const handleGenerateVideo = async () => {
-    if (!posterUrl || !trailerAudioBuffer) return
+    if (!posterUrl || !trailerAudioBuffer || renderAbortRef.current) return
+    const controller = new AbortController()
+    renderAbortRef.current = controller
     const { audioCtxRef } = getAudioEngineRefs()
     stopPreview()
     setRenderedVideo(null)
@@ -270,6 +296,7 @@ export function VideoGenerator() {
         script: currentScript,
         style: captionStyle,
         audioCtx,
+        signal: controller.signal,
         onProgress: (progress) =>
           setVideoGenerationStatus({
             show: true,
@@ -278,6 +305,10 @@ export function VideoGenerator() {
             progress,
           }),
       })
+      if (controller.signal.aborted) {
+        URL.revokeObjectURL(video.url)
+        return
+      }
       setRenderedVideo(video)
       setVideoGenerationStatus({
         show: true,
@@ -289,11 +320,15 @@ export function VideoGenerator() {
       })
       toast({ title: "Trailer Video Generated!", description: "Your Instagram-ready video is ready for download." })
     } catch (error) {
+      if (controller.signal.aborted) return
       const message = error instanceof Error ? error.message : "An unknown error occurred."
       setVideoGenerationStatus({ show: true, status: "error", message, progress: 0 })
       toast({ title: "Video Generation Failed", description: message, variant: "destructive" })
     } finally {
-      setIsGeneratingVideo(false)
+      if (renderAbortRef.current === controller) {
+        renderAbortRef.current = null
+        setIsGeneratingVideo(false)
+      }
     }
   }
 

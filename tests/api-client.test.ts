@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test"
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from "bun:test"
 import {
   ApiClient,
   generateMoviePoster,
   generatePosterData,
   type PosterData,
 } from "../lib/api-client"
+
+import * as vault from "../lib/vault"
 
 const createMockResponse = (data: any, ok = true, status = 200, statusText = "OK"): Response => {
   return {
@@ -30,10 +32,23 @@ const mockFetch = mock((_input: URL | RequestInfo, _init?: RequestInit) =>
   Promise.resolve(createMockResponse({ choices: [{ message: { content: "default mock" } }] })),
 )
 
-// Mock the vault so module-level helpers can construct an ApiClient in tests
-mock.module("../lib/vault", () => ({
-  loadKeys: async () => ({ openrouter: "test-openrouter-key", elevenlabs: "test-elevenlabs-key" }),
-}))
+const originalFetch = globalThis.fetch
+const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window")
+let loadKeysSpy: ReturnType<typeof spyOn<typeof vault, "loadKeys">>
+
+beforeEach(() => {
+  loadKeysSpy = spyOn(vault, "loadKeys").mockResolvedValue({
+    openrouter: "test-openrouter-key",
+    elevenlabs: "test-elevenlabs-key",
+  })
+})
+
+afterEach(() => {
+  loadKeysSpy.mockRestore()
+  globalThis.fetch = originalFetch
+  if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow)
+  else Reflect.deleteProperty(globalThis, "window")
+})
 
 const fullMockPosterSpec: PosterData = {
   visualStyle: {
@@ -255,9 +270,7 @@ describe("module-level helpers", () => {
   })
 
   it("generatePosterData falls back to the server env proxy when no keys are stored", async () => {
-    mock.module("../lib/vault", () => ({
-      loadKeys: async () => ({}),
-    }))
+    loadKeysSpy.mockResolvedValueOnce({})
     mockFetch.mockResolvedValueOnce(
       createMockResponse({ content: JSON.stringify(fullMockPosterSpec) }),
     )
@@ -266,9 +279,6 @@ describe("module-level helpers", () => {
     expect(result.data).toEqual(fullMockPosterSpec)
     const [url] = mockFetch.mock.calls[0]
     expect(url).toBe("/api/openrouter-chat")
-    mock.module("../lib/vault", () => ({
-      loadKeys: async () => ({ openrouter: "test-openrouter-key", elevenlabs: "test-elevenlabs-key" }),
-    }))
   })
 
   it("generateMoviePoster returns a success result", async () => {

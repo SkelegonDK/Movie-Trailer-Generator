@@ -18,6 +18,8 @@ export interface RenderTrailerVideoOptions {
   audioCtx: AudioContext
   /** Called with 0..1 progress while the video renders in real time. */
   onProgress?: (fraction: number) => void
+  /** Cancels recording and releases capture resources. */
+  signal?: AbortSignal
 }
 
 export interface RenderedVideo {
@@ -79,34 +81,18 @@ export async function renderTrailerVideo(opts: RenderTrailerVideoOptions): Promi
   const captions = buildCaptions(opts.script, opts.audioBuffer.duration, opts.style.maxWords)
   const duration = opts.audioBuffer.duration
 
-  const canvasStream = canvas.captureStream(30)
+  opts.signal?.throwIfAborted()
   await opts.audioCtx.resume()
+  opts.signal?.throwIfAborted()
 
-  const streamDestination = opts.audioCtx.createMediaStreamDestination()
-  const source = opts.audioCtx.createBufferSource()
-  source.buffer = opts.audioBuffer
-  source.connect(streamDestination)
-
-  const combinedStream = new MediaStream([
-    ...canvasStream.getVideoTracks(),
-    ...streamDestination.stream.getAudioTracks(),
-  ])
-
-  const recorder = new MediaRecorder(combinedStream, {
-    mimeType,
-    videoBitsPerSecond: 12_000_000,
-  })
-  const chunks: Blob[] = []
-  recorder.ondataavailable = (event) => {
-    if (event.data && event.data.size > 0) chunks.push(event.data)
-  }
-
-  const finished = new Promise<Blob>((resolve, reject) => {
-    recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }))
-    recorder.onerror = () => reject(new Error("Video recording failed"))
-  })
-
+  let canvasStream: MediaStream | undefined
+  let streamDestination: MediaStreamAudioDestinationNode | undefined
+  let source: AudioBufferSourceNode | undefined
+  let recorder: MediaRecorder | undefined
   let rafId = 0
+  let stopTimer: ReturnType<typeof setTimeout> | undefined
+  let abortRecording: (() => void) | undefined
+
   const draw = (elapsed: number) => {
     const clamped = Math.max(0, Math.min(elapsed, duration))
     drawTrailerFrame(ctx, {
@@ -118,48 +104,79 @@ export async function renderTrailerVideo(opts: RenderTrailerVideoOptions): Promi
     })
   }
 
-  let startedAt = 0
-  const tick = () => {
-    const elapsed = opts.audioCtx.currentTime - startedAt
-    draw(elapsed)
-    opts.onProgress?.(Math.min(1, elapsed / duration))
-    rafId = requestAnimationFrame(tick)
-  }
+  try {
+    // Capture starts with a complete frame, even before the first animation tick.
+    draw(0)
+    canvasStream = canvas.captureStream(30)
+    streamDestination = opts.audioCtx.createMediaStreamDestination()
+    source = opts.audioCtx.createBufferSource()
+    source.buffer = opts.audioBuffer
+    source.connect(streamDestination)
 
-  // A single sample of silence keeps the audio track alive for the full
-  // duration even if the voiceover buffer ends a few ms early.
-  const keepAlive = opts.audioCtx.createBufferSource()
-  const silence = opts.audioCtx.createBuffer(
-    1,
-    Math.max(1, Math.ceil(duration * opts.audioCtx.sampleRate)),
-    opts.audioCtx.sampleRate,
-  )
-  keepAlive.buffer = silence
-  keepAlive.connect(streamDestination)
+    const combinedStream = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...streamDestination.stream.getAudioTracks(),
+    ])
+    recorder = new MediaRecorder(combinedStream, {
+      mimeType,
+      videoBitsPerSecond: 12_000_000,
+    })
+    const activeRecorder = recorder
+    const activeSource = source
+    const chunks: Blob[] = []
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      activeRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) chunks.push(event.data)
+      }
+      activeRecorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }))
+      activeRecorder.onerror = () => reject(new Error("Video recording failed"))
+      abortRecording = () => reject(opts.signal?.reason ?? new DOMException("Recording cancelled", "AbortError"))
+      opts.signal?.addEventListener("abort", abortRecording, { once: true })
+      if (opts.signal?.aborted) {
+        abortRecording()
+        return
+      }
 
-  recorder.start(250)
-  keepAlive.start()
-  source.onended = () => {
-    draw(duration)
+      const startedAt = opts.audioCtx.currentTime
+      const tick = () => {
+        const elapsed = opts.audioCtx.currentTime - startedAt
+        draw(elapsed)
+        opts.onProgress?.(Math.min(1, elapsed / duration))
+        rafId = requestAnimationFrame(tick)
+      }
+      activeSource.onended = () => {
+        draw(duration)
+        cancelAnimationFrame(rafId)
+        opts.onProgress?.(1)
+        // Allow the last canvas frame to reach the recorder before stopping.
+        stopTimer = setTimeout(() => {
+          if (activeRecorder.state !== "inactive") activeRecorder.stop()
+        }, 150)
+      }
+      activeRecorder.start(250)
+      activeSource.start()
+      rafId = requestAnimationFrame(tick)
+    })
+
+    opts.signal?.throwIfAborted()
+    return {
+      url: URL.createObjectURL(blob),
+      mimeType,
+      extension: extensionFor(mimeType),
+      duration,
+    }
+  } finally {
+    if (abortRecording) opts.signal?.removeEventListener("abort", abortRecording)
     cancelAnimationFrame(rafId)
-    opts.onProgress?.(1)
-    window.setTimeout(() => {
-      if (recorder.state !== "inactive") recorder.stop()
-    }, 150)
-  }
-
-  startedAt = opts.audioCtx.currentTime
-  source.start()
-  rafId = requestAnimationFrame(tick)
-
-  const blob = await finished
-  cancelAnimationFrame(rafId)
-  canvasStream.getTracks().forEach((track) => track.stop())
-
-  return {
-    url: URL.createObjectURL(blob),
-    mimeType,
-    extension: extensionFor(mimeType),
-    duration,
+    if (stopTimer !== undefined) clearTimeout(stopTimer)
+    if (source) {
+      source.onended = null
+      try { source.stop() } catch { /* The source may not have started. */ }
+      source.disconnect()
+    }
+    if (recorder && recorder.state !== "inactive") recorder.stop()
+    canvasStream?.getTracks().forEach((track) => track.stop())
+    streamDestination?.stream.getTracks().forEach((track) => track.stop())
+    streamDestination?.disconnect()
   }
 }

@@ -31,7 +31,7 @@ export const DEFAULT_BACKGROUND_MUSIC_ID = 'trailer-music';
  * @returns {BackgroundMusicTrack[]} An array of all background music tracks.
  * @example
  * const tracks = getAllBackgroundMusicTracks();
- * console.log(tracks[0].title); // "Dramatic Epic Score"
+ * console.log(tracks[0].title); // "Trailer Music"
  */
 export function getAllBackgroundMusicTracks(): BackgroundMusicTrack[] {
   return BACKGROUND_MUSIC_TRACKS;
@@ -42,9 +42,9 @@ export function getAllBackgroundMusicTracks(): BackgroundMusicTrack[] {
  * @param {string} id - The ID of the music track to retrieve.
  * @returns {BackgroundMusicTrack | undefined} The music track if found, otherwise undefined.
  * @example
- * const track = getBackgroundMusicTrackById('dramatic-epic');
+ * const track = getBackgroundMusicTrackById('trailer-music');
  * if (track) {
- *   console.log(track.src); // "/audio/background-music/dramatic_epic_score.mp3"
+ *   console.log(track.src); // "/assets/trailer_music.mp3"
  * }
  */
 export function getBackgroundMusicTrackById(id: string): BackgroundMusicTrack | undefined {

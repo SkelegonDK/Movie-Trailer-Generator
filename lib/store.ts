@@ -95,7 +95,11 @@ export const useStore = create<AppState>((set) => ({
 
   setParameters: (parameters) => set({ parameters }),
   setMovieTitle: (movieTitle) => set({ movieTitle }),
-  setCurrentScript: (currentScript) => set({ currentScript }),
+  setCurrentScript: (currentScript) => set((state) => currentScript === state.currentScript ? {} : {
+    currentScript,
+    trailerAudioBuffer: null,
+    audioGenerationStatus: { show: false, status: "generating", message: "" },
+  }),
   setPosterData: (posterData) => set({ posterData }),
   setPosterDataError: (posterDataError) => set({ posterDataError }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
@@ -110,7 +114,8 @@ export const useStore = create<AppState>((set) => ({
   setIsGeneratingVideo: (isGeneratingVideo) => set({ isGeneratingVideo }),
 
   generateScript: async (toast) => {
-    const state = useStore.getState(); // Get current state
+    const state = useStore.getState();
+    if (state.isGenerating) return;
     const { parameters, movieTitle, setMovieTitle, setCurrentScript, setIsGenerating } = state;
 
     if (!parameters.genre) {
@@ -122,19 +127,11 @@ export const useStore = create<AppState>((set) => ({
       return;
     }
 
-    const apiClient = await getApiClientAsync();
-    if (!apiClient) {
-      toast({
-        title: "API Keys Missing",
-        description: "Please add OpenRouter and ElevenLabs keys in Settings.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsGenerating(true);
 
     try {
+      const apiClient = await getApiClientAsync();
+      if (!apiClient) throw new Error("Please add an OpenRouter key in Settings.");
       let titleToUse = movieTitle;
       if (!titleToUse) {
         titleToUse = await apiClient.generateMovieTitle(parameters);
@@ -146,7 +143,7 @@ export const useStore = create<AppState>((set) => ({
 
       toast({
         title: "Script Generated!",
-        description: "Your AI-powered movie trailer script is ready. Click 'Generate Trailer' to create audio.",
+        description: "Your movie trailer script is ready. Click 'Generate Audio' to create audio.",
       });
     } catch (error) {
       console.error("Script generation error:", error);
@@ -164,6 +161,7 @@ export const useStore = create<AppState>((set) => ({
   },
 
   generateTrailerAudio: async (toast: any, audioCtxRef: React.MutableRefObject<AudioContext | null>) => {
+    if (useStore.getState().isGeneratingAudio) return;
     const { currentScript, movieTitle, parameters, setIsGeneratingAudio, setAudioGenerationStatus, setTrailerAudioBuffer } = useStore.getState();
 
     if (!currentScript.trim()) {
@@ -171,16 +169,12 @@ export const useStore = create<AppState>((set) => ({
       return;
     }
 
-    const apiClient = await getApiClientAsync();
-    if (!apiClient) {
-      toast({ title: "API Keys Missing", description: "Please add ElevenLabs API key in Settings.", variant: "destructive" });
-      return;
-    }
-
     setIsGeneratingAudio(true);
     setAudioGenerationStatus({ show: true, status: "generating", message: "Initializing audio engine..." });
 
     try {
+      const apiClient = await getApiClientAsync();
+      if (!apiClient) throw new Error("Please add an ElevenLabs key in Settings.");
       const audioCtx = await initAudioContext(audioCtxRef, setAudioGenerationStatus, toast);
       if (!audioCtx) return;
 
@@ -189,7 +183,7 @@ export const useStore = create<AppState>((set) => ({
       const voiceoverLengthSamples = voiceoverAudioBuffer.length;
 
       // Step 2: Load the music and stretch it to exactly the voiceover's length
-      // (pitch and formants preserved via WSOLA time-stretching).
+      // (pitch and formants approximately preserved via WSOLA time-stretching).
       const musicAudioBuffer = await fetchAndDecodeMusic(audioCtx, setAudioGenerationStatus);
       setAudioGenerationStatus({ show: true, status: "generating", message: "Stretching music to voiceover length..." });
       const finalMusicAudioBuffer = await stretchMusicToVoiceover(
@@ -201,6 +195,9 @@ export const useStore = create<AppState>((set) => ({
       // Step 3: Stitch the voiceover and the stretched music together.
       setAudioGenerationStatus({ show: true, status: "generating", message: "Mixing voiceover and music..." });
       const mixedAudioBuffer = await mixVoiceoverAndMusic(voiceoverAudioBuffer, finalMusicAudioBuffer, 0.5);
+      if (useStore.getState().currentScript !== currentScript) {
+        throw new Error("The script changed during generation. Generate audio again for the current script.");
+      }
       setTrailerAudioBuffer(mixedAudioBuffer);
       const audioUrl = createAndSaveAudio(mixedAudioBuffer, movieTitle, currentScript, parameters);
 

@@ -10,14 +10,13 @@ export interface Caption {
   text: string
   /** Start time in seconds (inclusive). */
   start: number
-  /** End time in seconds (exclusive, except for the last caption). */
+  /** End time in seconds (exclusive). */
   end: number
 }
 
 /**
  * Extracts narrator voiceover lines from a movie script.
- * Mirrors `extractNarratorText` in audio-utils, but returns the individual
- * lines instead of joining them into a single string.
+ * Also used by `extractNarratorText` to keep legacy narration extraction consistent.
  * @param {string} script - The movie script text.
  * @returns {string[]} Narrator lines in script order.
  * @example
@@ -40,7 +39,8 @@ export function extractNarratorLines(script: string): string[] {
           !narratorText.includes("FADE") &&
           !narratorText.includes("CUT")
         ) {
-          narratorLines.push(narratorText)
+          narratorLines.push(stripWrappingQuotes(narratorText))
+          i = nextLineIndex
         }
       }
     } else if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
@@ -79,8 +79,7 @@ function stripWrappingQuotes(line: string): string {
  * // ["They said the internet was forever...", "MEMECEPTION."]
  */
 export function extractCaptionLines(script: string): string[] {
-  const narratorLines = extractNarratorLines(script)
-  if (narratorLines.length > 0) return narratorLines
+  if (/NARRATOR \(V\.O\.?\)/.test(script)) return extractNarratorLines(script)
 
   const lines: string[] = []
   for (const raw of script.split("\n")) {
@@ -105,7 +104,7 @@ function countWords(text: string): number {
  * @returns {string[]} Caption chunks in reading order.
  * @example
  * splitIntoCaptionChunks("In a world where peace is a memory. Only one hero can save them.", 6)
- * // ["In a world where peace", "is a memory.", "Only one hero can", "save them."]
+ * // ["In a world where peace is", "a memory.", "Only one hero can save them."]
  */
 export function splitIntoCaptionChunks(text: string, maxWords: number): string[] {
   const sentences = text
