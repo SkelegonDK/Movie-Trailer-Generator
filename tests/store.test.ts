@@ -10,6 +10,49 @@ afterEach(() => {
 })
 
 describe("generation state", () => {
+  for (const valid of [true, false]) {
+    it(`processes context and exposes editable fields (valid JSON: ${valid})`, async () => {
+      const client = new api.ApiClient("test-key", "")
+      spyOn(api, "getApiClientAsync").mockResolvedValue(client)
+      const data = { genre: "Comedy", setting: "Copenhagen", character: "Chef", conflict: "Lost recipe", plotTwist: "Secret friendship", movieTitle: "The Recipe" }
+      spyOn(client, "generateContextData").mockResolvedValue(valid ? data : null)
+      const script = spyOn(client, "generateScript")
+      const parameters = { ...initialState.parameters, genre: "Drama" }
+      useStore.setState({ parameters, movieTitle: "Existing", customContextEnabled: true, customContext: "Story idea" })
+      await useStore.getState().processCustomContext(mock(() => {}))
+      expect(useStore.getState().parameters.genre).toBe(valid ? "Comedy" : "Drama")
+      expect(useStore.getState().movieTitle).toBe(valid ? "The Recipe" : "Existing")
+      expect(useStore.getState().contextFieldsVisible).toBe(true)
+      expect(useStore.getState().isProcessingContext).toBe(false)
+      expect(script).not.toHaveBeenCalled()
+      useStore.getState().setParameters({ ...useStore.getState().parameters, character: "Baker" })
+      expect(useStore.getState().parameters.character).toBe("Baker")
+    })
+  }
+
+  it("releases the context processing lock on API failure", async () => {
+    spyOn(api, "getApiClientAsync").mockRejectedValue(new Error("Unavailable"))
+    useStore.setState({ customContextEnabled: true, customContext: "Story idea" })
+    await useStore.getState().processCustomContext(mock(() => {}))
+    expect(useStore.getState().isProcessingContext).toBe(false)
+  })
+
+  for (const enabled of [true, false]) {
+    it(`includes custom context only when enabled (${enabled})`, async () => {
+      const client = new api.ApiClient("test-key", "")
+      spyOn(api, "getApiClientAsync").mockResolvedValue(client)
+      const title = spyOn(client, "generateMovieTitle").mockResolvedValue("Test Title")
+      const script = spyOn(client, "generateScript").mockResolvedValue("Test Script")
+      const parameters = { ...initialState.parameters, genre: "Comedy" }
+      useStore.setState({ parameters, customContextEnabled: enabled, contextFieldsVisible: true, customContext: "  Dry humor in Copenhagen.  " })
+      await useStore.getState().generateScript(mock(() => {}))
+      const context = enabled ? "Dry humor in Copenhagen." : ""
+      expect(title).toHaveBeenCalledWith(parameters, context)
+      expect(script).toHaveBeenCalledWith(parameters, "Test Title", context)
+      expect(useStore.getState().customContext).toBe("  Dry humor in Copenhagen.  ")
+    })
+  }
+
   it("handles vault failures and releases the script generation lock", async () => {
     spyOn(api, "getApiClientAsync").mockRejectedValue(new Error("Vault unavailable"))
     spyOn(console, "error").mockImplementation(() => {})

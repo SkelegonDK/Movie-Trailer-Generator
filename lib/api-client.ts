@@ -4,6 +4,7 @@ import { generatePosterPrompt } from "@/app/movieposterPrompts"
 import { posterDataSchema, type PosterData, type PosterDataResponse } from "@/lib/poster-schema"
 import { loadKeys } from "@/lib/vault"
 import { TTS_MODEL_ID, TTS_VOICE_ID, TTS_VOICE_SETTINGS } from "@/lib/elevenlabs-config"
+import { parseContextData, type ContextData } from "@/lib/context-schema"
 
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 const TEXT_MODEL = "z-ai/glm-5.3-flash"
@@ -119,13 +120,31 @@ export class ApiClient {
     return (typeof data.content === "string" ? data.content : "").trim()
   }
 
+  async generateContextData(context: string): Promise<ContextData | null> {
+    const messages = [
+      { role: "system", content: 'Turn the user context into movie trailer data. Return only a JSON object with exactly these string fields: genre, setting, character, conflict, plotTwist, movieTitle. Every field must be nonempty. Respect the supplied details and creatively fill in missing details. Do not generate a script or include commentary.' },
+      { role: "user", content: context.trim() },
+    ]
+    const content = await this.openRouterText(messages, 1000)
+    const data = parseContextData(content)
+    if (data) return data
+
+    // Give malformed or incomplete output one chance to be corrected.
+    const corrected = await this.openRouterText([
+      ...messages,
+      { role: "assistant", content },
+      { role: "user", content: "The response was not valid JSON matching the requested fields. Return a complete JSON object with all six nonempty string fields, without markdown or commentary." },
+    ], 1000)
+    return parseContextData(corrected)
+  }
+
   async generateMovieTitle(parameters: {
     genre: string
     setting: string
     character: string
     conflict: string
     plotTwist: string
-  }): Promise<string> {
+  }, customContext = ""): Promise<string> {
     const prompt = MOVIE_TITLE_USER_PROMPT
       .replace("{genre}", parameters.genre)
       .replace("{main_character}", parameters.character)
@@ -136,7 +155,7 @@ export class ApiClient {
       (await this.openRouterText(
         [
           { role: "system", content: MOVIE_TITLE_SYSTEM_PROMPT },
-          { role: "user", content: prompt },
+          { role: "user", content: customContext.trim() ? `${prompt}\n\nAdditional context:\n${customContext.trim()}\n\nThe supplied movie fields take precedence over conflicting details in the additional context.` : prompt },
         ],
         50,
       )) || "Untitled Movie"
@@ -152,6 +171,7 @@ export class ApiClient {
       plotTwist: string
     },
     title: string,
+    customContext = "",
   ): Promise<string> {
     const prompt = OPENROUTER_SCRIPT_USER_PROMPT
       .replace("{title}", title)
@@ -164,7 +184,7 @@ export class ApiClient {
       (await this.openRouterText(
         [
           { role: "system", content: OPENROUTER_SCRIPT_SYSTEM_PROMPT },
-          { role: "user", content: prompt },
+          { role: "user", content: customContext.trim() ? `${prompt}\n\nAdditional context:\n${customContext.trim()}\n\nThe supplied movie fields take precedence over conflicting details in the additional context.` : prompt },
         ],
         450,
       )) || "Failed to generate script"

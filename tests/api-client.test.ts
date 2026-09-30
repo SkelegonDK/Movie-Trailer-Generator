@@ -89,6 +89,38 @@ describe("ApiClient", () => {
   })
 
   describe("text generation", () => {
+    const contextData = { genre: "Comedy", setting: "Copenhagen", character: "Chef", conflict: "Lost recipe", plotTwist: "Secret friendship", movieTitle: "The Recipe" }
+
+    it("accepts context JSON wrapped in markdown", async () => {
+      mockFetch.mockResolvedValueOnce(createMockResponse({ choices: [{ message: { content: "```json\n" + JSON.stringify(contextData) + "\n```" } }] }))
+      expect(await apiClient.generateContextData("A chef in Copenhagen")).toEqual(contextData)
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    })
+
+    it("retries invalid context JSON and accepts the corrected data", async () => {
+      mockFetch.mockResolvedValueOnce(createMockResponse({ choices: [{ message: { content: "Invalid JSON" } }] }))
+      mockFetch.mockResolvedValueOnce(createMockResponse({ choices: [{ message: { content: JSON.stringify(contextData) } }] }))
+      expect(await apiClient.generateContextData("Story idea")).toEqual(contextData)
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+    })
+
+    it("falls back after incomplete or incorrectly typed JSON on both attempts", async () => {
+      mockFetch.mockResolvedValueOnce(createMockResponse({ choices: [{ message: { content: JSON.stringify({ genre: "Comedy" }) } }] }))
+      mockFetch.mockResolvedValueOnce(createMockResponse({ choices: [{ message: { content: JSON.stringify({ ...contextData, character: 42 }) } }] }))
+      expect(await apiClient.generateContextData("Story idea")).toBeNull()
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+    })
+
+    it("passes custom context to title and script prompts", async () => {
+      const parameters = { genre: "Comedy", setting: "Copenhagen", character: "Chef", conflict: "Lost recipe", plotTwist: "Secret friendship" }
+      await apiClient.generateMovieTitle(parameters, "  Use dry humor.  ")
+      await apiClient.generateScript(parameters, "The Last Recipe", "  Use dry humor.  ")
+      for (const [, options] of mockFetch.mock.calls) {
+        const body = JSON.parse(options?.body as string)
+        expect(body.messages[1].content).toContain("Additional context:\nUse dry humor.")
+      }
+    })
+
     it("generates a movie title with the GLM text model", async () => {
       mockFetch.mockResolvedValueOnce(
         createMockResponse({ choices: [{ message: { content: "Mocked Movie Title" } }] }),

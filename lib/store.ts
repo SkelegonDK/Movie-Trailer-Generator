@@ -16,6 +16,10 @@ interface MovieParameters {
 interface AppState {
   parameters: MovieParameters
   movieTitle: string
+  customContextEnabled: boolean
+  customContext: string
+  isProcessingContext: boolean
+  contextFieldsVisible: boolean
   currentScript: string
   posterData: any | null
   posterDataError: string | null
@@ -44,6 +48,8 @@ interface AppState {
 
   setParameters: (parameters: MovieParameters) => void
   setMovieTitle: (title: string) => void
+  setCustomContextEnabled: (enabled: boolean) => void
+  setCustomContext: (context: string) => void
   setCurrentScript: (script: string) => void
   setPosterData: (data: any | null) => void
   setPosterDataError: (error: string | null) => void
@@ -58,6 +64,7 @@ interface AppState {
   setVideoGenerationStatus: (status: AppState['videoGenerationStatus']) => void
   setIsGeneratingVideo: (isGeneratingVideo: boolean) => void
   generateScript: (toast: any) => Promise<void>
+  processCustomContext: (toast: any) => Promise<void>
   generateTrailerAudio: (toast: any, audioCtxRef: React.MutableRefObject<AudioContext | null>) => Promise<void>
 }
 
@@ -70,6 +77,10 @@ export const useStore = create<AppState>((set) => ({
     plotTwist: "",
   },
   movieTitle: "",
+  customContextEnabled: false,
+  customContext: "",
+  isProcessingContext: false,
+  contextFieldsVisible: false,
   currentScript: "",
   posterData: null,
   posterDataError: null,
@@ -95,6 +106,8 @@ export const useStore = create<AppState>((set) => ({
 
   setParameters: (parameters) => set({ parameters }),
   setMovieTitle: (movieTitle) => set({ movieTitle }),
+  setCustomContextEnabled: (customContextEnabled) => set({ customContextEnabled }),
+  setCustomContext: (customContext) => set({ customContext, contextFieldsVisible: false }),
   setCurrentScript: (currentScript) => set((state) => currentScript === state.currentScript ? {} : {
     currentScript,
     trailerAudioBuffer: null,
@@ -113,10 +126,39 @@ export const useStore = create<AppState>((set) => ({
   setVideoGenerationStatus: (videoGenerationStatus) => set({ videoGenerationStatus }),
   setIsGeneratingVideo: (isGeneratingVideo) => set({ isGeneratingVideo }),
 
+  processCustomContext: async (toast) => {
+    const state = useStore.getState()
+    if (state.isProcessingContext || state.isGenerating || !state.customContextEnabled) return
+    const context = state.customContext.trim()
+    if (!context) {
+      toast({ title: "Missing context", description: "Add some story details first.", variant: "destructive" })
+      return
+    }
+    set({ isProcessingContext: true, contextFieldsVisible: false })
+    try {
+      const client = await getApiClientAsync()
+      if (!client) throw new Error("Please add an OpenRouter key in Settings.")
+      const data = await client.generateContextData(context)
+      if (!data) {
+        set({ contextFieldsVisible: true })
+        toast({ title: "Fill in the fields manually", description: "The AI returned invalid data after retrying. Your existing values were kept so you can edit them.", variant: "destructive" })
+        return
+      }
+      const { movieTitle, ...parameters } = data
+      set({ parameters, movieTitle, contextFieldsVisible: true })
+      toast({ title: "Context processed", description: "Review or edit the fields, then generate your script." })
+    } catch (error) {
+      toast({ title: "Context processing failed", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" })
+    } finally {
+      set({ isProcessingContext: false })
+    }
+  },
+
   generateScript: async (toast) => {
     const state = useStore.getState();
-    if (state.isGenerating) return;
+    if (state.isGenerating || state.isProcessingContext || (state.customContextEnabled && !state.contextFieldsVisible)) return;
     const { parameters, movieTitle, setMovieTitle, setCurrentScript, setIsGenerating } = state;
+    const customContext = state.customContextEnabled ? state.customContext.trim() : "";
 
     if (!parameters.genre) {
       toast({
@@ -134,11 +176,11 @@ export const useStore = create<AppState>((set) => ({
       if (!apiClient) throw new Error("Please add an OpenRouter key in Settings.");
       let titleToUse = movieTitle;
       if (!titleToUse) {
-        titleToUse = await apiClient.generateMovieTitle(parameters);
+        titleToUse = await apiClient.generateMovieTitle(parameters, customContext);
         setMovieTitle(titleToUse);
       }
 
-      const script = await apiClient.generateScript(parameters, titleToUse);
+      const script = await apiClient.generateScript(parameters, titleToUse, customContext);
       setCurrentScript(script);
 
       toast({
