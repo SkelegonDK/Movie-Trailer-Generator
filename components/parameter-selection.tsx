@@ -84,9 +84,13 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 @4xl:flex-row @4xl:items-center @4xl:justify-between">
-        <h2 className="headline text-2xl">Start with an idea</h2>
+    <div className="space-y-7">
+      <div className="flex flex-col gap-4 @2xl:flex-row @2xl:items-center @2xl:justify-between">
+        <div className="space-y-2">
+          <p className="studio-eyebrow text-muted-foreground">01 / The concept</p>
+          <h2 className="headline text-2xl">Start with an idea.</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">Set the scene. We’ll take care of the drama.</p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-h-11 items-center gap-3">
             <Label htmlFor="custom-context-toggle" className="flex min-h-11 cursor-pointer items-center text-sm">Custom context</Label>
@@ -175,7 +179,7 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
       )}
 
       {(!customContextEnabled || contextFieldsVisible) && (<>
-      <div className="grid grid-cols-1 @lg:grid-cols-2 @5xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 @lg:grid-cols-2 @2xl:grid-cols-3 gap-x-6 gap-y-5 border-t pt-5">
         <ParameterCard
           title="Genre"
           value={parameters.genre}
@@ -221,12 +225,12 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
           onValueChange={(value) => setParameters({ ...parameters, plotTwist: value })}
           onRandomize={() => handleRandomizeParameter("plotTwist")}
         />
-        <Card>
-          <CardHeader className="flex-row items-center justify-between px-4 pt-3 pb-2 sm:px-4 sm:pt-3 sm:pb-2">
-            <CardTitle className="flex min-h-11 items-center text-base font-medium"><Label htmlFor="movie-title">Movie title</Label></CardTitle>
-            <span className="text-sm text-muted-foreground">Optional</span>
+        <Card className="parameter-field">
+          <CardHeader className="flex-row items-center justify-between px-0 pt-0 pb-2 sm:px-0 sm:pt-0 sm:pb-2">
+            <CardTitle className="flex min-h-11 items-center text-sm font-medium"><Label htmlFor="movie-title">Movie title</Label></CardTitle>
+            <span className="text-xs text-muted-foreground">Optional</span>
           </CardHeader>
-          <CardContent className="px-4 pb-4 sm:px-4 sm:pb-4">
+          <CardContent className="px-0 pb-0 sm:px-0 sm:pb-0">
             <Input
               id="movie-title"
               disabled={disabled}
@@ -239,7 +243,7 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
         </Card>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-end">
         {!customContextEnabled && <Button onClick={handleRandomizeAll} variant="skeuomorphic-secondary" disabled={disabled || isGenerating || mode === 'custom'}>
           <Shuffle className="w-4 h-4" />
           Randomize all

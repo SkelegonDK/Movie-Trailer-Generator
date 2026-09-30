@@ -11,6 +11,7 @@ import { MovieDetails } from "@/components/movie-details"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useStore } from "@/lib/store"
+import { motion, useReducedMotion } from "motion/react"
 
 const steps = [
   { id: "idea", label: "Idea" },
@@ -26,6 +27,7 @@ export default function GeneratorPage() {
   const [step, setStep] = useState<Step>("idea")
   const trackRef = useRef<HTMLDivElement>(null)
   const previousStep = useRef(step)
+  const reduceMotion = useReducedMotion()
   const {
     parameters, currentScript, trailerAudioBuffer, posterUrl, posterStatus,
     isProcessingContext, isGenerating, isGeneratingAudio, isGeneratingVideo, videoGenerationStatus,
@@ -59,32 +61,36 @@ export default function GeneratorPage() {
   }, [step])
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-3.5rem)] max-w-[1600px] flex-col gap-4 p-3 sm:p-6 md:h-dvh">
-      <header className="flex shrink-0 items-center justify-between gap-3">
-        <h1 className="headline text-xl sm:text-3xl">Make a little movie magic</h1>
-        <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{index + 1} / {steps.length}</span>
-      </header>
+    <div className="mx-auto flex h-[calc(100dvh-3.5rem)] max-w-[1600px] flex-col gap-5 p-4 sm:p-7 md:h-dvh lg:p-8">
+      <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex shrink-0 items-end justify-between gap-3 pb-2 sm:pb-4">
+        <div className="space-y-3">
+          <p className="studio-eyebrow text-muted-foreground">The trailer studio <span aria-hidden className="mx-2">/</span> A little idea. A big screen.</p>
+          <h1 className="headline text-2xl sm:text-4xl">Make a little movie magic.</h1>
+        </div>
+        <span className="studio-eyebrow shrink-0 tabular-nums text-muted-foreground"><span className="text-foreground">0{index + 1}</span> / 0{steps.length}</span>
+      </motion.header>
 
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,auto)_minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] xl:grid-rows-1">
-        <div className="movie-details-shell max-h-[36dvh] min-h-0 xl:col-start-2 xl:row-start-1 xl:max-h-none [&>aside]:h-full">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="movie-details-shell max-h-[28dvh] min-h-0 xl:col-start-2 xl:row-start-1 xl:max-h-none [&>aside]:h-full">
           <MovieDetails onEdit={() => setStep("idea")} />
-        </div>
+        </motion.div>
 
         <Tabs value={step} onValueChange={(value) => setStep(value as Step)} className="flex min-h-0 min-w-0 flex-col gap-4 xl:col-start-1 xl:row-start-1">
-          <TabsList aria-label="Trailer workflow" className="grid h-auto shrink-0 grid-cols-5 gap-1 rounded-none bg-transparent p-0 sm:gap-2">
+          <TabsList aria-label="Trailer workflow" className="grid h-auto shrink-0 grid-cols-5 gap-0 rounded-none border-b bg-transparent p-0">
             {steps.map((item, i) => (
-              <TabsTrigger key={item.id} value={item.id} className="min-h-11 min-w-0 gap-2 rounded-md border border-transparent px-1 py-2 transition-colors data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-foreground sm:px-3">
-                <span aria-hidden className="hidden h-5 w-5 shrink-0 items-center justify-center text-sm sm:flex">
-                  {complete[item.id] ? <Check className="h-4 w-4 text-success" /> : i + 1}
+              <TabsTrigger key={item.id} value={item.id} className="workflow-tab relative min-h-12 min-w-0 gap-2 rounded-none px-1 py-3 text-xs transition-colors hover:text-foreground data-[state=active]:text-foreground sm:px-3 sm:text-sm">
+                <span aria-hidden className="hidden h-5 w-5 shrink-0 items-center justify-center font-mono text-[10px] text-muted-foreground sm:flex">
+                  {complete[item.id] ? <Check className="h-3 w-3 text-success" /> : `0${i + 1}`}
                 </span>
                 {item.label}
+                {step === item.id && <motion.span layoutId="workflow-indicator" className="absolute inset-x-0 bottom-[-1px] h-px bg-primary" transition={{ duration: reduceMotion ? 0 : 0.35 }} />}
                 <span className="sr-only">{complete[item.id] ? ", ready" : ""}</span>
               </TabsTrigger>
             ))}
           </TabsList>
 
-          <div className="min-h-0 flex-1 overflow-hidden rounded-lg border bg-background">
-            <div ref={trackRef} className="flex h-full w-full transition-transform duration-300 ease-[var(--ease-out)] motion-reduce:transition-none" style={{ transform: `translateX(-${index * 100}%)` }}>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="studio-panel min-h-0 flex-1 overflow-clip rounded-lg border">
+            <motion.div ref={trackRef} className="flex h-full w-full" animate={{ x: `-${index * 100}%` }} initial={false} transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}>
               {steps.map((item) => (
                 <TabsContent key={item.id} value={item.id} forceMount inert={step !== item.id} aria-hidden={step !== item.id} data-step={item.id} className="@container m-0 h-full min-w-0 basis-full shrink-0 overflow-y-auto overscroll-contain p-4 sm:p-6 [overflow-wrap:anywhere]">
                   {item.id === "idea" && <ParameterSelection disabled={busy} onGenerated={() => advanceFrom("idea")} />}
@@ -94,15 +100,15 @@ export default function GeneratorPage() {
                   {item.id === "video" && <VideoGenerator active={step === "video"} disabled={busy} />}
                 </TabsContent>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           <footer className="flex shrink-0 items-center justify-between gap-3">
             <Button variant="outline" disabled={index === 0} onClick={() => setStep(steps[index - 1].id)}>
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
             <p className="hidden text-sm text-muted-foreground sm:block">{index === 4 ? "Ready for the big screen?" : "One scene at a time."}</p>
-            <Button variant="skeuomorphic-secondary" disabled={index === steps.length - 1} onClick={() => setStep(steps[index + 1].id)}>
+            <Button variant="default" disabled={index === steps.length - 1} onClick={() => setStep(steps[index + 1].id)}>
               Next <ArrowRight className="h-4 w-4" />
             </Button>
           </footer>

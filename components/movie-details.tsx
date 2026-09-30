@@ -3,6 +3,7 @@
 import { Loader2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
+import { AnimatePresence, motion } from "motion/react"
 
 const fields = [
   ["genre", "Genre"],
@@ -34,22 +35,28 @@ export function MovieDetails({ onEdit }: { onEdit: () => void }) {
     : "Your movie details stay here as you create."
 
   return (
-    <aside aria-label="Movie details" className="flex min-h-0 flex-col overflow-hidden rounded-lg border bg-card">
+    <aside aria-label="Movie details" className="flex min-h-0 flex-col overflow-hidden rounded-lg border bg-[#121212]/95">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-1 xl:px-4 xl:py-3">
-        <h2 className="text-sm font-semibold">Your movie</h2>
+        <h2 className="studio-eyebrow text-muted-foreground">Your production</h2>
         <Button variant="ghost" size="sm" onClick={onEdit} aria-label="Edit movie idea">
           <Pencil className="h-4 w-4" /> Edit
         </Button>
       </div>
       <div tabIndex={0} aria-label="Movie title, parameters, and context" className="min-h-0 overflow-y-auto overscroll-contain p-3 xl:p-4 [overflow-wrap:anywhere]">
-        <p className="mb-3 font-sans text-base font-semibold leading-snug xl:text-xl">
+        <p className="mb-5 font-sans text-base font-medium leading-snug tracking-tight xl:text-xl">
           {movieTitle || "Your title will appear here"}
         </p>
         <dl className="grid grid-cols-2 gap-x-3 gap-y-2 xl:grid-cols-1 xl:gap-y-4">
           {fields.map(([key, label]) => (
             <div key={key}>
-              <dt className="text-sm text-muted-foreground xl:mb-1">{label}</dt>
-              <dd className="text-sm leading-relaxed">{parameters[key] || "Not set yet"}</dd>
+              <dt className="studio-eyebrow text-muted-foreground xl:mb-1">{label}</dt>
+              <dd className="text-sm leading-relaxed">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span key={parameters[key] || "empty"} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }} className={parameters[key] ? "block" : "block text-muted-foreground"}>
+                    {parameters[key] || "Not set yet"}
+                  </motion.span>
+                </AnimatePresence>
+              </dd>
             </div>
           ))}
           <div className="col-span-2 border-t pt-2 xl:col-span-1 xl:pt-3">

@@ -22,9 +22,9 @@ export function ParameterCard({ title, value, options, mode, onValueChange, onRa
   const fieldId = useId()
   const lowerTitle = title.toLowerCase()
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between px-4 pt-3 pb-2 sm:px-4 sm:pt-3 sm:pb-2">
-        <CardTitle className="text-base font-medium"><Label htmlFor={fieldId}>{title}</Label></CardTitle>
+    <Card className="parameter-field">
+      <CardHeader className="flex flex-row items-center justify-between px-0 pt-0 pb-2 sm:px-0 sm:pt-0 sm:pb-2">
+        <CardTitle className="text-sm font-medium"><Label htmlFor={fieldId}>{title}</Label></CardTitle>
         <Button
           variant="ghost"
           size="icon"
@@ -35,7 +35,7 @@ export function ParameterCard({ title, value, options, mode, onValueChange, onRa
           <Shuffle className="w-4 h-4" />
         </Button>
       </CardHeader>
-      <CardContent className="px-4 pb-4 sm:px-4 sm:pb-4">
+      <CardContent className="px-0 pb-0 sm:px-0 sm:pb-0">
         {mode === 'custom' ? (
           <Input
             id={fieldId}
