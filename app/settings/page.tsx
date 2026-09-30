@@ -26,23 +26,20 @@ interface KeyMeta {
   label: string
   description: string
   placeholder: string
-  required: boolean
 }
 
 const KEYS: KeyMeta[] = [
   {
     id: "openrouter",
     label: "OpenRouter",
-    description: "Generates titles, scripts, poster specs, and poster images.",
+    description: "Titles, scripts, and movie posters.",
     placeholder: "sk-or-v1-…",
-    required: true,
   },
   {
     id: "elevenlabs",
     label: "ElevenLabs",
-    description: "Synthesizes trailer voiceovers.",
+    description: "Narration for your trailer.",
     placeholder: "sk_…",
-    required: true,
   },
 ]
 
@@ -122,40 +119,39 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-2">
-        <h1 className="headline text-5xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Your API keys are encrypted with AES-GCM and stored locally. The decryption key is a
-          non-extractable <code>CryptoKey</code> held in IndexedDB. When you generate content,
-          the relevant API key is sent directly to OpenRouter or ElevenLabs.
+        <h1 className="headline text-3xl sm:text-4xl">Settings</h1>
+        <p className="text-muted-foreground leading-relaxed">
+          Add your keys to start creating. They’re encrypted and saved in this browser,
+          then sent only to the service you use to generate content.
         </p>
       </div>
 
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" /> Environment Keys
+            <KeyRound className="h-5 w-5" /> Server keys
           </CardTitle>
           <CardDescription>
-            The server reads OPENROUTER_API and ELEVENLABS_API from .env.local. Keys stay
-            server-side and are used automatically when the vault is empty.
+            These keys are configured for this app. Each service uses its server key
+            unless you save a personal key below.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent className="flex flex-col gap-3" aria-busy={checkingEnv}>
           {envStatus
             ? (["openrouter", "elevenlabs"] as const).map((service) => {
                 const status = envStatus[service]
                 return (
-                  <div key={service} className="flex items-center gap-3">
+                  <div key={service} className="flex items-start gap-3">
                     {status.valid === true ? (
-                      <CheckCircle2 className="h-5 w-5 text-success" aria-hidden />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />
                     ) : (
-                      <XCircle className="h-5 w-5 text-destructive" aria-hidden />
+                      <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden />
                     )}
-                    <div className="flex flex-col">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <span className="text-sm font-medium capitalize">
-                        {service}: {status.valid === true ? "valid" : status.present ? "invalid" : "missing"}
+                        {(service === "openrouter" ? "OpenRouter" : "ElevenLabs")}: {status.valid === true ? "valid" : status.present ? "invalid" : "missing"}
                       </span>
-                      <span className="text-xs text-muted-foreground">{status.detail}</span>
+                      <span className="text-sm leading-relaxed break-words text-muted-foreground">{status.detail}</span>
                     </div>
                   </div>
                 )
@@ -164,8 +160,8 @@ export default function SettingsPage() {
               <span className="text-sm text-muted-foreground">{checkingEnv ? "Checking environment keys…" : "Could not check environment keys. Try again."}</span>
             )}
           <Button variant="outline" size="sm" onClick={checkEnv} disabled={checkingEnv} className="self-start">
-            <RefreshCw className={`mr-2 h-4 w-4 ${checkingEnv ? "animate-spin" : ""}`} />
-            {checkingEnv ? "Checking…" : "Re-check"}
+            <RefreshCw className={`h-4 w-4 ${checkingEnv ? "animate-spin" : ""}`} />
+            {checkingEnv ? "Checking…" : "Check again"}
           </Button>
         </CardContent>
       </Card>
@@ -173,22 +169,21 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" /> API Keys
+            <KeyRound className="h-5 w-5" /> Your API keys
           </CardTitle>
           <CardDescription>
-            Enter the keys for the services you want to use. Blank fields are ignored.
+            Use your own keys to generate with your accounts. Leave a field blank to keep its saved key.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           {vaultError && <p role="alert" className="text-sm text-destructive">{vaultError}</p>}
           {KEYS.map((k) => (
             <div key={k.id} className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2">
                 <Label htmlFor={k.id} className="text-sm uppercase tracking-wide">
                   {k.label}
-                  {k.required ? <span className="ml-1 text-primary">*</span> : null}
                 </Label>
-                <span className="text-xs text-muted-foreground">{k.description}</span>
+                <p id={`${k.id}-description`} className="text-sm leading-relaxed text-muted-foreground">{k.description}</p>
               </div>
               <div className="relative">
                 <Input
@@ -199,17 +194,24 @@ export default function SettingsPage() {
                     setDraft((prev) => ({ ...prev, [k.id]: event.target.value }))
                   }
                   placeholder={k.placeholder}
+                  className="pr-14"
+                  aria-describedby={`${k.id}-description`}
+                  disabled={!loaded || saving}
                   autoComplete="off"
                   spellCheck={false}
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   onClick={() => setVisible((prev) => ({ ...prev, [k.id]: !prev[k.id] }))}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-                  aria-label={visible[k.id] ? "Hide key" : "Show key"}
+                  className="absolute right-0 top-0 text-muted-foreground hover:text-foreground"
+                  disabled={!loaded || saving}
+                  aria-pressed={visible[k.id]}
+                  aria-label={`${visible[k.id] ? "Hide" : "Show"} ${k.label} key`}
                 >
                   {visible[k.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -221,11 +223,11 @@ export default function SettingsPage() {
               disabled={!loaded || saving}
               className="text-destructive hover:text-destructive"
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Clear vault
+              <Trash2 className="h-4 w-4" /> Remove saved keys
             </Button>
-            <Button onClick={handleSave} disabled={!loaded || saving}>
-              <Lock className="mr-2 h-4 w-4" />
-              {saving ? "Saving…" : "Encrypt & Save"}
+            <Button onClick={handleSave} aria-busy={saving} disabled={!loaded || saving}>
+              <Lock className="h-4 w-4" />
+              {saving ? "Saving…" : "Save keys"}
             </Button>
           </div>
         </CardContent>

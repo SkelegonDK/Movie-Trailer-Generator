@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { useId } from "react"
+import { Label } from "./label"
 import { Shuffle } from "lucide-react"
 
 interface ParameterCardProps {
@@ -16,11 +18,12 @@ interface ParameterCardProps {
 }
 
 export function ParameterCard({ title, value, options, mode, onValueChange, onRandomize }: ParameterCardProps) {
+  const fieldId = useId()
   const lowerTitle = title.toLowerCase()
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-medium">{title}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardTitle className="text-base font-medium"><Label htmlFor={fieldId}>{title}</Label></CardTitle>
         <Button
           variant="ghost"
           size="icon"
@@ -34,6 +37,7 @@ export function ParameterCard({ title, value, options, mode, onValueChange, onRa
       <CardContent>
         {mode === 'custom' ? (
           <Input
+            id={fieldId}
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
             placeholder={`Enter custom ${lowerTitle}`}
@@ -41,8 +45,8 @@ export function ParameterCard({ title, value, options, mode, onValueChange, onRa
           />
         ) : (
           <Select onValueChange={onValueChange} value={value}>
-            <SelectTrigger aria-label={title}>
-              <SelectValue placeholder={`Select a ${lowerTitle}`} />
+            <SelectTrigger id={fieldId} aria-label={title}>
+              <SelectValue placeholder={`Choose ${lowerTitle}`} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option) => (

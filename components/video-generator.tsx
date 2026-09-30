@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
+import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Clapperboard, Download, Loader2, Pause, Play, Video } from "lucide-react"
 import {
@@ -78,13 +79,13 @@ function InspectorRow({
     )
   }
   return (
-    <div className="flex min-h-[44px] items-center gap-3 border-b border-border px-1 py-1.5 last:border-b-0">
+    <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 sm:flex border-b border-border px-1 py-1.5 last:border-b-0">
       {label !== undefined && (
-        <span className="w-32 shrink-0 text-sm text-muted-foreground">{label}</span>
+        <span className="min-w-0 sm:w-32 sm:shrink-0 text-sm text-muted-foreground">{label}</span>
       )}
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-1">{children}</div>
+      <div className="col-span-2 row-start-2 flex min-w-0 flex-1 items-center justify-center gap-1 sm:order-2">{children}</div>
       {value !== undefined && (
-        <span className="w-14 shrink-0 text-right text-sm tabular-nums">{value}</span>
+        <span className="col-start-2 row-start-1 w-14 shrink-0 sm:order-3 text-right text-sm tabular-nums">{value}</span>
       )}
     </div>
   )
@@ -107,7 +108,7 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`rounded-md p-1.5 transition-colors ${
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors ${
         active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
       }`}
     >
@@ -318,7 +319,7 @@ export function VideoGenerator() {
         videoUrl: video.url,
         videoExtension: video.extension,
       })
-      toast({ title: "Trailer Video Generated!", description: "Your Instagram-ready video is ready for download." })
+      toast({ title: "Trailer video ready", description: "Your trailer is ready to download and share." })
     } catch (error) {
       if (controller.signal.aborted) return
       const message = error instanceof Error ? error.message : "An unknown error occurred."
@@ -350,12 +351,12 @@ export function VideoGenerator() {
 
   return (
     <div className="space-y-6">
-      <h2 className="headline text-2xl">Trailer Video</h2>
+      <h2 className="headline text-2xl">Trailer video</h2>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Video className="w-4 h-4" />
-            Instagram Video with Captions
+            Video preview & captions
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col lg:flex-row gap-6">
@@ -386,14 +387,14 @@ export function VideoGenerator() {
               className="w-full"
               aria-label={isPreviewPlaying ? "Pause preview" : "Play preview"}
             >
-              {isPreviewPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-              {isPreviewPlaying ? "Pause Preview" : "Play Preview"}
+              {isPreviewPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {isPreviewPlaying ? "Pause preview" : "Play preview"}
             </Button>
           </div>
 
-          <div className="flex-1 space-y-6">
+          <div className="min-w-0 flex-1 space-y-6">
             <div className="rounded-lg border bg-muted/30 px-3">
-              <InspectorRow label="Font Size" value={captionStyle.fontSize.toFixed(1)}>
+              <InspectorRow label="Font size" value={captionStyle.fontSize.toFixed(1)}>
                 <Slider
                   value={[captionStyle.fontSize]}
                   min={FONT_SIZE_MIN}
@@ -421,7 +422,7 @@ export function VideoGenerator() {
                 })}
               </InspectorRow>
 
-              <InspectorRow label="Vertical Alignment">
+              <InspectorRow label="Vertical alignment">
                 {VERTICAL_ALIGN_PRESETS.map((preset) => {
                   const Icon = VERTICAL_ALIGN_ICONS[preset.label]
                   return (
@@ -437,15 +438,18 @@ export function VideoGenerator() {
                 })}
               </InspectorRow>
 
-              <InspectorRow label="All Caps">
-                <Checkbox
-                  checked={captionStyle.allCaps}
-                  onCheckedChange={(checked) => setCaptionStyle({ ...captionStyle, allCaps: checked === true })}
-                  aria-label="All caps captions"
-                />
+              <InspectorRow label="All caps">
+                <Label htmlFor="all-caps-captions" className="flex h-11 w-11 cursor-pointer items-center justify-center">
+                  <Checkbox
+                    id="all-caps-captions"
+                    checked={captionStyle.allCaps}
+                    onCheckedChange={(checked) => setCaptionStyle({ ...captionStyle, allCaps: checked === true })}
+                    aria-label="All caps captions"
+                  />
+                </Label>
               </InspectorRow>
 
-              <InspectorRow label="Words per Caption" value={String(captionStyle.maxWords)}>
+              <InspectorRow label="Words per caption" value={String(captionStyle.maxWords)}>
                 <Slider
                   value={[captionStyle.maxWords]}
                   min={MAX_WORDS_MIN}
@@ -490,24 +494,25 @@ export function VideoGenerator() {
             <Button
               onClick={handleGenerateVideo}
               variant="skeuomorphic-primary"
+              aria-busy={isGeneratingVideo}
               disabled={!canGenerate}
-              className="w-full max-w-[240px]"
+              className="w-full sm:w-auto"
             >
               {isGeneratingVideo ? (
-                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                <Loader2 className="animate-spin w-4 h-4" />
               ) : (
-                <Clapperboard className="w-4 h-4 mr-2" />
+                <Clapperboard className="w-4 h-4" />
               )}
-              {isGeneratingVideo ? "Rendering..." : "Generate Video"}
+              {isGeneratingVideo ? "Rendering…" : "Generate video"}
             </Button>
 
             {videoGenerationStatus.show && videoGenerationStatus.status === "generating" && (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">{videoGenerationStatus.message}</p>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div role="progressbar" aria-label="Video rendering progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(videoGenerationStatus.progress * 100)} className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${Math.round(videoGenerationStatus.progress * 100)}%` }}
+                    className="h-full origin-left rounded-full bg-primary transition-transform"
+                    style={{ transform: `scaleX(${videoGenerationStatus.progress})` }}
                   />
                 </div>
               </div>
@@ -520,9 +525,9 @@ export function VideoGenerator() {
                   className="w-full max-w-xs rounded-lg border"
                   src={renderedVideo.url}
                 />
-                <Button onClick={downloadVideo} variant="skeuomorphic-success" className="w-full max-w-[240px]">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Video
+                <Button onClick={downloadVideo} variant="skeuomorphic-success" className="w-full sm:w-auto">
+                  <Download className="w-4 h-4" />
+                  Download video
                 </Button>
               </div>
             )}

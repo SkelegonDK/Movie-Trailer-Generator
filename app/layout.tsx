@@ -28,8 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${geist.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-md focus:bg-accent focus:px-4 focus:py-3 focus:text-accent-foreground">Skip to content</a>
         <Sidebar />
-        <main className="min-h-screen md:ml-64">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-h-screen min-w-0 md:ml-64">{children}</main>
         <Toaster />
       </body>
     </html>

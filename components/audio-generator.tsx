@@ -44,17 +44,17 @@ export function AudioGenerator() {
           )}
           {audioGenerationStatus.status === "success" && <div className="w-4 h-4 bg-success rounded-full" />}
           {audioGenerationStatus.status === "error" && <div className="w-4 h-4 bg-destructive rounded-full" />}
-          Audio Generation
+          Trailer audio
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-card-foreground mb-4">{audioGenerationStatus.message}</p>
+        <p role="status" className="text-sm text-card-foreground mb-4">{audioGenerationStatus.message}</p>
         {(() => {
           if (audioGenerationStatus.status === "success" && audioGenerationStatus.audioUrl) {
             return (
               <div className="space-y-3">
-                <audio controls className="w-full" src={audioGenerationStatus.audioUrl} />
-                <div className="flex gap-2">
+                <audio aria-label="Generated trailer audio" controls className="w-full" src={audioGenerationStatus.audioUrl} />
+                <div className="flex flex-wrap gap-2">
                   <Button
                     onClick={() => {
                       if (audioGenerationStatus.audioUrl) {
@@ -64,8 +64,8 @@ export function AudioGenerator() {
                     variant="outline"
                     size="sm"
                   >
-                    <Download className="w-3 h-3 mr-1" />
-                    Download Audio
+                    <Download className="w-3 h-3" />
+                    Download audio
                   </Button>
                   <Button
                     onClick={() => setAudioGenerationStatus({ show: false, status: "generating", message: "" })}
@@ -79,9 +79,9 @@ export function AudioGenerator() {
             )
           } else if (audioGenerationStatus.status === "error") {
             return (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button onClick={handleGenerateAudio} variant="outline" size="sm" disabled={isGeneratingAudio}>
-                  <RotateCcw className="w-3 h-3 mr-1" />
+                  <RotateCcw className="w-3 h-3" />
                   Retry
                 </Button>
                 <Button

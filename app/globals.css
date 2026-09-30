@@ -10,28 +10,30 @@
 }
 
 :root {
+  --on-color: #08090e;
   --background: #181a20;
-  --foreground: #ffffff;
+  --foreground: #f7f5f7;
   --card: #22242c;
-  --card-foreground: #e0e0e0;
+  --card-foreground: #eeebef;
   --primary: #ff3366;
-  --primary-foreground: #ffffff;
+  --primary-foreground: var(--on-color);
   --secondary: #00c2ff;
-  --secondary-foreground: #ffffff;
+  --secondary-foreground: var(--on-color);
   --accent: #ffd600;
-  --accent-foreground: #000000;
-  --destructive: #ff3b30;
-  --destructive-foreground: #ffffff;
+  --accent-foreground: var(--on-color);
+  --destructive: #ff655d;
+  --destructive-foreground: var(--on-color);
   --success: #4cd964;
-  --success-foreground: #ffffff;
+  --success-foreground: var(--on-color);
   --muted: rgba(255, 255, 255, 0.06);
   --muted-foreground: rgba(255, 255, 255, 0.7);
   --popover: #181a20;
-  --popover-foreground: #ffffff;
+  --popover-foreground: var(--foreground);
   --input: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.12);
   --ring: #ff3366;
   --radius: 1.25rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   --primary-accent: var(--primary);
   --secondary-accent: var(--secondary);
@@ -39,11 +41,11 @@
   --error-accent: var(--destructive);
   --success-accent: var(--success);
 
-  --text-on-primary-accent: #ffffff;
-  --text-on-secondary-accent: #ffffff;
-  --text-on-highlight-accent: #000000;
-  --text-on-error-accent: #ffffff;
-  --text-on-success-accent: #ffffff;
+  --text-on-primary-accent: var(--primary-foreground);
+  --text-on-secondary-accent: var(--secondary-foreground);
+  --text-on-highlight-accent: var(--accent-foreground);
+  --text-on-error-accent: var(--destructive-foreground);
+  --text-on-success-accent: var(--success-foreground);
 
   --primary-accent-shadow-dark: #cc2952;
   --secondary-accent-shadow-dark: #009bcc;
@@ -61,11 +63,11 @@
   --skeu-highlight-strong-inset: rgba(255, 255, 255, 0.25);
   --skeu-shadow-soft-gradient-overlay: rgba(0, 0, 0, 0.1);
 
-  --card-genre-bg: rgba(255, 51, 102, 0.8);
-  --card-setting-bg: rgba(0, 194, 255, 0.8);
-  --card-character-bg: rgba(255, 214, 0, 0.8);
-  --card-conflict-bg: rgba(230, 46, 92, 0.8);
-  --card-plot-twist-bg: rgba(0, 169, 230, 0.8);
+  --card-genre-bg: color-mix(in oklab, var(--primary) 16%, var(--card));
+  --card-setting-bg: color-mix(in oklab, var(--secondary) 16%, var(--card));
+  --card-character-bg: color-mix(in oklab, var(--accent) 16%, var(--card));
+  --card-conflict-bg: var(--card-genre-bg);
+  --card-plot-twist-bg: var(--card-setting-bg);
 }
 
 @theme inline {
@@ -89,7 +91,7 @@
   --color-border: var(--border);
   --color-ring: var(--ring);
 
-  --color-dialog-background: #22242c;
+  --color-dialog-background: var(--card);
   --color-card-genre-bg: var(--card-genre-bg);
   --color-card-setting-bg: var(--card-setting-bg);
   --color-card-character-bg: var(--card-character-bg);
@@ -134,11 +136,32 @@
 
 .headline {
   font-family: "Frick", var(--font-geist), sans-serif;
-  font-weight: 900;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 @utility rounded-skeu {
   border-radius: 0.375em !important;
+}
+
+@layer base {
+  :where(a, button, input, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -14,6 +14,7 @@ import {
   Sheet,
   SheetContent,
   SheetHeader,
+  SheetDescription,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
@@ -33,15 +34,16 @@ function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigat
             key={item.name}
             href={item.href}
             onClick={onNavigate}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               buttonVariants({
-                variant: isActive ? "skeuomorphic-primary" : "skeuomorphic-secondary",
+                variant: isActive ? "skeuomorphic-primary" : "ghost",
                 size: "default",
               }),
               "w-full justify-start text-sm uppercase",
             )}
           >
-            <item.icon className="w-5 h-5 mr-3" />
+            <item.icon className="w-5 h-5" />
             {item.name}
           </Link>
         )
@@ -58,7 +60,7 @@ function SidebarBrand({ className }: { className?: string }) {
         alt=""
         aria-hidden
         className="w-32 h-32 object-contain"
-        priority
+        loading="eager"
       />
       <p className="text-sm text-muted-foreground font-mono">
         by{" "}
@@ -95,7 +97,7 @@ export function Sidebar() {
       {/* Mobile: top bar + sheet */}
       <header className="md:hidden sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-lg">
         <Link href="/" className="flex items-center gap-2">
-          <Image src={logo} alt="" aria-hidden className="h-8 w-8 object-contain" />
+          <Image src={logo} alt="" aria-hidden loading="eager" className="h-8 w-8 object-contain" />
           <span className="headline text-sm">Trailer Generator</span>
         </Link>
         <Sheet open={open} onOpenChange={setOpen}>
@@ -107,6 +109,7 @@ export function Sidebar() {
           <SheetContent side="left" className="w-72 p-0">
             <SheetHeader className="sr-only">
               <SheetTitle>Navigation</SheetTitle>
+              <SheetDescription>Choose the trailer generator or API key settings.</SheetDescription>
             </SheetHeader>
             <SidebarBrand className="pt-10" />
             <div className="px-6 py-6">

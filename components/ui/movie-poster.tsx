@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Maximize2, X } from "lucide-react";
-import { Card } from "./card";
+import { ImageIcon, Maximize2 } from "lucide-react";
 import { Skeleton } from "./skeleton";
 import { Button } from "./button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./dialog";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,7 +23,8 @@ export function MoviePoster() {
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <Card className="p-4">
+    <Dialog open={expanded} onOpenChange={setExpanded}>
+      <div>
       <div className="relative aspect-[9/16] w-full overflow-hidden rounded-lg">
         {posterStatus === 'loading' ? (
           <Skeleton className="h-full w-full" />
@@ -31,7 +32,8 @@ export function MoviePoster() {
           <>
             <Image
               src={posterUrl}
-              alt="Generated movie poster"
+              alt={`${movieTitle || "Your movie"} poster`}
+              sizes="(max-width: 640px) calc(100vw - 4rem), 384px"
               fill
               className="object-contain"
               onError={() => {
@@ -44,61 +46,47 @@ export function MoviePoster() {
                 });
               }}
             />
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80"
-              aria-label="Click to expand poster"
-            >
-              <Maximize2 className="h-4 w-4" />
-            </button>
+            <DialogTrigger asChild>
+              <Button variant="secondary" size="icon" className="absolute right-2 top-2" aria-label="Expand poster">
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
           </>
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-muted">
-            <p className="text-sm text-muted-foreground text-center px-4">
-              {posterDataError || "No poster generated yet"}
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-muted px-6">
+            <ImageIcon aria-hidden className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm leading-relaxed text-muted-foreground text-center">
+              {posterDataError || "Your movie deserves a poster. Generate or paste a script, then bring it to life."}
             </p>
           </div>
         )}
       </div>
-      <div className="mt-4 flex flex-col items-center gap-2">
-        {posterUrl && posterStatus !== 'loading' && (
+      {posterUrl && posterStatus !== 'loading' && (
+          <Button asChild variant="skeuomorphic-success" className="mt-4 w-full">
           <a
             href={posterUrl}
             download={posterFileName(movieTitle)}
-            className="w-full max-w-[200px]"
             aria-label="Download generated poster"
           >
-            <Button variant="skeuomorphic-success" className="w-full" type="button">
-              Download Poster
-            </Button>
+            Download poster
           </a>
+          </Button>
         )}
-      </div>
-      {expanded && posterUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setExpanded(false)}
-          role="dialog"
-          aria-label="Expanded movie poster"
-        >
-          <button
-            type="button"
-            onClick={() => setExpanded(false)}
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-            aria-label="Close expanded poster"
-          >
-            <X className="h-5 w-5" />
-          </button>
+      {posterUrl && (
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl border-0 bg-background p-4 pt-16" aria-describedby="expanded-poster-description">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{movieTitle || "Your movie"} poster</DialogTitle>
+            <DialogDescription id="expanded-poster-description">Full-size generated movie artwork.</DialogDescription>
+          </DialogHeader>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={posterUrl}
             alt={`${movieTitle || "Movie"} poster, expanded`}
-            className="max-h-full max-w-full object-contain"
-            onClick={(e) => e.stopPropagation()}
+            className="mx-auto max-h-[calc(100dvh-8rem)] max-w-full object-contain"
           />
-        </div>
+        </DialogContent>
       )}
-    </Card>
+      </div>
+    </Dialog>
   );
 }

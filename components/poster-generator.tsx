@@ -39,7 +39,7 @@ export function PosterGenerator() {
     setPosterUrl(null)
     toast({
       title: "Generating Movie Poster",
-      description: "Generating poster specifications and image. Please wait...",
+      description: "Creating artwork for your movie. This can take a minute.",
     })
 
     try {
@@ -104,7 +104,7 @@ export function PosterGenerator() {
 
   return (
     <div className="space-y-6">
-      <h2 className="headline text-2xl">Generate Poster</h2>
+      <h2 className="headline text-2xl">Create your poster</h2>
       <Card>
         <CardContent className="flex flex-col items-center justify-center p-6">
           <div className="w-full max-w-sm mx-auto mb-4">
@@ -113,15 +113,16 @@ export function PosterGenerator() {
           <Button
             onClick={handleGenerateMoviePoster}
             variant="skeuomorphic-primary"
-            disabled={posterStatus === 'loading'}
-            className="w-full max-w-[220px]"
+            aria-busy={posterStatus === 'loading'}
+            disabled={!currentScript.trim() || posterStatus === 'loading'}
+            className="w-full sm:w-auto"
           >
             {posterStatus === 'loading' ? (
-              <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              <Loader2 className="animate-spin w-4 h-4" />
             ) : (
-              <ImageIcon className="w-4 h-4 mr-2" />
+              <ImageIcon className="w-4 h-4" />
             )}
-            {posterStatus === 'loading' ? "Generating..." : "Generate Movie Poster"}
+            {posterStatus === 'loading' ? "Creating your poster…" : "Generate poster"}
           </Button>
         </CardContent>
       </Card>
