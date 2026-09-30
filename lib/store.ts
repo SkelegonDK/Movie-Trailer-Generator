@@ -63,9 +63,9 @@ interface AppState {
   setCaptionStyle: (style: CaptionStyle) => void
   setVideoGenerationStatus: (status: AppState['videoGenerationStatus']) => void
   setIsGeneratingVideo: (isGeneratingVideo: boolean) => void
-  generateScript: (toast: any) => Promise<void>
+  generateScript: (toast: any) => Promise<boolean>
   processCustomContext: (toast: any) => Promise<void>
-  generateTrailerAudio: (toast: any, audioCtxRef: React.MutableRefObject<AudioContext | null>) => Promise<void>
+  generateTrailerAudio: (toast: any, audioCtxRef: React.MutableRefObject<AudioContext | null>) => Promise<boolean>
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -156,7 +156,7 @@ export const useStore = create<AppState>((set) => ({
 
   generateScript: async (toast) => {
     const state = useStore.getState();
-    if (state.isGenerating || state.isProcessingContext || (state.customContextEnabled && !state.contextFieldsVisible)) return;
+    if (state.isGenerating || state.isProcessingContext || (state.customContextEnabled && !state.contextFieldsVisible)) return false;
     const { parameters, movieTitle, setMovieTitle, setCurrentScript, setIsGenerating } = state;
     const customContext = state.customContextEnabled ? state.customContext.trim() : "";
 
@@ -166,7 +166,7 @@ export const useStore = create<AppState>((set) => ({
         description: "Please select at least a genre.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     setIsGenerating(true);
@@ -184,9 +184,10 @@ export const useStore = create<AppState>((set) => ({
       setCurrentScript(script);
 
       toast({
-        title: "Script Generated!",
-        description: "Your movie trailer script is ready. Click 'Generate Audio' to create audio.",
+        title: "Script ready",
+        description: "Review your script, then move to Audio to give it a voice.",
       });
+      return true;
     } catch (error) {
       console.error("Script generation error:", error);
       toast({
@@ -197,18 +198,19 @@ export const useStore = create<AppState>((set) => ({
             : "Failed to generate script. Please check your API keys and try again.",
         variant: "destructive",
       });
+      return false;
     } finally {
       setIsGenerating(false);
     }
   },
 
   generateTrailerAudio: async (toast: any, audioCtxRef: React.MutableRefObject<AudioContext | null>) => {
-    if (useStore.getState().isGeneratingAudio) return;
+    if (useStore.getState().isGeneratingAudio) return false;
     const { currentScript, movieTitle, parameters, setIsGeneratingAudio, setAudioGenerationStatus, setTrailerAudioBuffer } = useStore.getState();
 
     if (!currentScript.trim()) {
       toast({ title: "No Script Available", description: "Please generate a script first.", variant: "destructive" });
-      return;
+      return false;
     }
 
     setIsGeneratingAudio(true);
@@ -218,7 +220,7 @@ export const useStore = create<AppState>((set) => ({
       const apiClient = await getApiClientAsync();
       if (!apiClient) throw new Error("Please add an ElevenLabs key in Settings.");
       const audioCtx = await initAudioContext(audioCtxRef, setAudioGenerationStatus, toast);
-      if (!audioCtx) return;
+      if (!audioCtx) return false;
 
       // Step 1: Generate the voiceover first — its length defines the final trailer length.
       const voiceoverAudioBuffer = await generateAndDecodeVoiceover(apiClient, currentScript, audioCtx, setAudioGenerationStatus);
@@ -244,13 +246,15 @@ export const useStore = create<AppState>((set) => ({
       const audioUrl = createAndSaveAudio(mixedAudioBuffer, movieTitle, currentScript, parameters);
 
       setAudioGenerationStatus({ show: true, status: "success", message: "Trailer audio ready!", audioUrl });
-      toast({ title: "Trailer Audio Generated!", description: "Your trailer audio is ready for playback or download." });
+      toast({ title: "Trailer audio ready", description: "Listen or download in Audio, or continue with your movie poster." });
+      return true;
 
     } catch (error) {
       console.error("Audio generation pipeline error:", error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       setAudioGenerationStatus({ show: true, status: "error", message: `Error: ${errorMessage}` });
       toast({ title: "Audio Generation Failed", description: errorMessage, variant: "destructive" });
+      return false;
     } finally {
       setIsGeneratingAudio(false);
     }

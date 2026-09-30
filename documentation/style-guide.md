@@ -32,3 +32,5 @@ The root layout loads Geist and Geist Mono through `next/font/google`. Body text
 Colorful buttons use dark foreground text for contrast. Parameter badges use subtle palette tints with light text. Buttons, inputs, select triggers, and slider hit areas have a minimum height of 44px, visible focus indicators, and reduced-motion support.
 
 The sidebar is fixed on desktop and becomes a top bar with a navigation sheet on mobile. Keep labels, keyboard focus, and text contrast readable when adding or changing controls; the palette alone does not guarantee accessible contrast.
+
+The generator uses five sliding sections inside one viewport: Idea, Script, Audio, Poster, and Video. Back/Next and section tabs stay outside the scrolling content. The movie details panel keeps context, parameters, title, and generation progress visible beside the section on wide screens and above it on smaller screens. Both areas scroll independently. Short screens use a more compact details panel to preserve working space. Slide transitions respect reduced-motion preferences.

@@ -117,7 +117,7 @@ function IconButton({
   )
 }
 
-export function VideoGenerator() {
+export function VideoGenerator({ active = true, disabled = false }: { active?: boolean; disabled?: boolean }) {
   const {
     movieTitle,
     currentScript,
@@ -133,6 +133,7 @@ export function VideoGenerator() {
   } = useStore()
   const { toast } = useToast()
 
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const posterImageRef = useRef<HTMLImageElement | null>(null)
   const previewSourceRef = useRef<AudioBufferSourceNode | null>(null)
@@ -211,6 +212,13 @@ export function VideoGenerator() {
     previewSourceRef.current = null
     setIsPreviewPlaying(false)
   }, [])
+
+  useEffect(() => {
+    if (!active) {
+      stopPreview()
+      videoRef.current?.pause()
+    }
+  }, [active, stopPreview])
 
   // Output belongs to these exact inputs; discard it when any input changes.
   useEffect(() => {
@@ -344,10 +352,24 @@ export function VideoGenerator() {
   }
 
   if (!posterUrl || posterStatus !== "ready" || !trailerAudioBuffer) {
-    return null
+    return (
+      <div className="space-y-6">
+        <h2 className="headline text-2xl">The grand finale</h2>
+        <Card>
+          <CardHeader><CardTitle className="text-lg">Bring your trailer to life</CardTitle></CardHeader>
+          <CardContent className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+            <p>Make your audio and poster first. Then preview your trailer, style the captions, and export your movie.</p>
+            <ul className="space-y-2">
+              <li>{trailerAudioBuffer ? "✓ Audio ready" : "Create your narration and music in Audio."}</li>
+              <li>{posterUrl && posterStatus === "ready" ? "✓ Poster ready" : "Create your artwork in Poster."}</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
-  const canGenerate = !isGeneratingVideo && videoGenerationStatus.status !== "generating"
+  const canGenerate = !disabled && !isGeneratingVideo && videoGenerationStatus.status !== "generating"
 
   return (
     <div className="space-y-6">
@@ -359,8 +381,8 @@ export function VideoGenerator() {
             Video preview & captions
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col lg:flex-row gap-6">
-          <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto lg:mx-0">
+        <CardContent className="flex flex-col @3xl:flex-row gap-6">
+          <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto @3xl:mx-0">
             <canvas
               ref={canvasRef}
               width={PREVIEW_WIDTH}
@@ -521,6 +543,7 @@ export function VideoGenerator() {
             {renderedVideo && (
               <div className="space-y-3">
                 <video
+                  ref={videoRef}
                   controls
                   className="w-full max-w-xs rounded-lg border"
                   src={renderedVideo.url}

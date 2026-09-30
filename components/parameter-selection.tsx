@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export function ParameterSelection() {
+export function ParameterSelection({ disabled = false, onGenerated }: { disabled?: boolean; onGenerated?: () => void }) {
   const {
     parameters,
     setParameters,
@@ -67,8 +67,8 @@ export function ParameterSelection() {
     setParameters({ ...parameters, [param]: options[param][Math.floor(Math.random() * options[param].length)] })
   }
 
-  const handleGenerateScript = () => {
-    generateScript(toast)
+  const handleGenerateScript = async () => {
+    if (await generateScript(toast)) onGenerated?.()
   }
 
   const getOptionsFor = (param: keyof typeof parameters) => {
@@ -86,7 +86,7 @@ export function ParameterSelection() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 @4xl:flex-row @4xl:items-center @4xl:justify-between">
-        <h1 className="headline text-3xl sm:text-4xl">Create your trailer</h1>
+        <h2 className="headline text-2xl">Start with an idea</h2>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-h-11 items-center gap-3">
             <Label htmlFor="custom-context-toggle" className="flex min-h-11 cursor-pointer items-center text-sm">Custom context</Label>
@@ -95,12 +95,12 @@ export function ParameterSelection() {
               aria-label="Custom context"
               checked={customContextEnabled}
               onCheckedChange={setCustomContextEnabled}
-              disabled={isProcessingContext || isGenerating}
+              disabled={disabled || isProcessingContext || isGenerating}
               aria-controls="custom-context-panel"
             />
           </div>
           {!customContextEnabled && (<>
-          <Select disabled={isGenerating} value={mode} onValueChange={value => setMode(value as "hollywood" | "stupid" | "custom")}>
+          <Select disabled={disabled || isGenerating} value={mode} onValueChange={value => setMode(value as "hollywood" | "stupid" | "custom")}>
             <SelectTrigger className="w-[180px]" aria-label="Parameter mode">
               <SelectValue placeholder="Choose mode" />
             </SelectTrigger>
@@ -154,7 +154,7 @@ export function ParameterSelection() {
           <CardContent className="space-y-4">
             <Textarea
               id="custom-context"
-              disabled={isProcessingContext || isGenerating}
+              disabled={disabled || isProcessingContext || isGenerating}
               value={customContext}
               onChange={event => setCustomContext(event.target.value)}
               placeholder="For example: Set the story in Copenhagen, with dry humor and an unlikely friendship."
@@ -165,7 +165,7 @@ export function ParameterSelection() {
               onClick={() => processCustomContext(toast)}
               variant="skeuomorphic-primary"
               aria-busy={isProcessingContext}
-              disabled={isProcessingContext || isGenerating || !customContext.trim()}
+              disabled={disabled || isProcessingContext || isGenerating || !customContext.trim()}
             >
               {isProcessingContext ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {isProcessingContext ? "Processing context…" : contextFieldsVisible ? "Update fields" : "Use this idea"}
@@ -175,11 +175,12 @@ export function ParameterSelection() {
       )}
 
       {(!customContextEnabled || contextFieldsVisible) && (<>
-      <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 @lg:grid-cols-2 @5xl:grid-cols-3 gap-4">
         <ParameterCard
           title="Genre"
           value={parameters.genre}
           options={getOptionsFor("genre")}
+          disabled={disabled}
           mode={customContextEnabled ? "custom" : mode}
           onValueChange={(value) => setParameters({ ...parameters, genre: value })}
           onRandomize={() => handleRandomizeParameter("genre")}
@@ -188,6 +189,7 @@ export function ParameterSelection() {
           title="Setting"
           value={parameters.setting}
           options={getOptionsFor("setting")}
+          disabled={disabled}
           mode={customContextEnabled ? "custom" : mode}
           onValueChange={(value) => setParameters({ ...parameters, setting: value })}
           onRandomize={() => handleRandomizeParameter("setting")}
@@ -196,6 +198,7 @@ export function ParameterSelection() {
           title="Main character"
           value={parameters.character}
           options={getOptionsFor("character")}
+          disabled={disabled}
           mode={customContextEnabled ? "custom" : mode}
           onValueChange={(value) => setParameters({ ...parameters, character: value })}
           onRandomize={() => handleRandomizeParameter("character")}
@@ -204,6 +207,7 @@ export function ParameterSelection() {
           title="Conflict"
           value={parameters.conflict}
           options={getOptionsFor("conflict")}
+          disabled={disabled}
           mode={customContextEnabled ? "custom" : mode}
           onValueChange={(value) => setParameters({ ...parameters, conflict: value })}
           onRandomize={() => handleRandomizeParameter("conflict")}
@@ -212,18 +216,20 @@ export function ParameterSelection() {
           title="Plot twist"
           value={parameters.plotTwist}
           options={getOptionsFor("plotTwist")}
+          disabled={disabled}
           mode={customContextEnabled ? "custom" : mode}
           onValueChange={(value) => setParameters({ ...parameters, plotTwist: value })}
           onRandomize={() => handleRandomizeParameter("plotTwist")}
         />
         <Card>
-          <CardHeader className="flex-row items-center justify-between pb-3">
+          <CardHeader className="flex-row items-center justify-between px-4 pt-3 pb-2 sm:px-4 sm:pt-3 sm:pb-2">
             <CardTitle className="flex min-h-11 items-center text-base font-medium"><Label htmlFor="movie-title">Movie title</Label></CardTitle>
             <span className="text-sm text-muted-foreground">Optional</span>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4 sm:px-4 sm:pb-4">
             <Input
               id="movie-title"
+              disabled={disabled}
               value={movieTitle}
               onChange={e => setMovieTitle(e.target.value)}
               placeholder="Leave blank for a surprise"
@@ -234,11 +240,11 @@ export function ParameterSelection() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {!customContextEnabled && <Button onClick={handleRandomizeAll} variant="skeuomorphic-secondary" disabled={isGenerating || mode === 'custom'}>
+        {!customContextEnabled && <Button onClick={handleRandomizeAll} variant="skeuomorphic-secondary" disabled={disabled || isGenerating || mode === 'custom'}>
           <Shuffle className="w-4 h-4" />
           Randomize all
         </Button>}
-        <Button onClick={handleGenerateScript} variant="skeuomorphic-primary" aria-busy={isGenerating} disabled={isGenerating}>
+        <Button onClick={handleGenerateScript} variant="skeuomorphic-primary" aria-busy={isGenerating} disabled={disabled || isGenerating}>
           {isGenerating ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (

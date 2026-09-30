@@ -125,6 +125,8 @@
 @layer base {
   * {
     border-color: var(--border);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
 
   body {
@@ -139,6 +141,12 @@
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+@media (width < 1280px) and (height < 700px) {
+  .movie-details-shell {
+    max-height: 25dvh;
+  }
 }
 
 @utility rounded-skeu {

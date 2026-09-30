@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store"
 import { generatePosterData, generateMoviePoster } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 
-export function PosterGenerator() {
+export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: boolean; onGenerated?: () => void }) {
   const {
     movieTitle,
     parameters,
@@ -90,6 +90,7 @@ export function PosterGenerator() {
         description: "Successfully generated the poster image.",
       })
       setPosterStatus('ready')
+      onGenerated?.()
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error occurred";
       setPosterDataError(errorMsg)
@@ -107,14 +108,14 @@ export function PosterGenerator() {
       <h2 className="headline text-2xl">Create your poster</h2>
       <Card>
         <CardContent className="flex flex-col items-center justify-center p-6">
-          <div className="w-full max-w-sm mx-auto mb-4">
+          <div className="w-full max-w-[240px] @3xl:max-w-xs mx-auto mb-4">
             <MoviePoster />
           </div>
           <Button
             onClick={handleGenerateMoviePoster}
             variant="skeuomorphic-primary"
             aria-busy={posterStatus === 'loading'}
-            disabled={!currentScript.trim() || posterStatus === 'loading'}
+            disabled={disabled || !currentScript.trim() || posterStatus === 'loading'}
             className="w-full sm:w-auto"
           >
             {posterStatus === 'loading' ? (
