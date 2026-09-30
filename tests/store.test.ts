@@ -10,6 +10,37 @@ afterEach(() => {
 })
 
 describe("generation state", () => {
+  it("defaults to Blockbuster", () => {
+    expect(useStore.getInitialState().mode).toBe("blockbuster")
+  })
+
+  for (const enabled of [true, false]) {
+    it(`directs AAA Game titles and scripts as game reveals with custom context enabled: ${enabled}`, async () => {
+      const client = new api.ApiClient("test-key", "")
+      spyOn(api, "getApiClientAsync").mockResolvedValue(client)
+      const title = spyOn(client, "generateMovieTitle").mockResolvedValue("Eclipse Protocol")
+      const script = spyOn(client, "generateScript").mockResolvedValue("Enter a world on the edge of collapse.")
+      const parameters = { ...initialState.parameters, genre: "Open-World Action RPG" }
+      useStore.getState().setMode("aaa-game")
+      useStore.setState({ parameters, customContextEnabled: enabled, contextFieldsVisible: true, customContext: "  A co-op adventure with dry humor.  " })
+
+      expect(await useStore.getState().generateScript(mock(() => {}))).toBe(true)
+      const context = title.mock.calls[0]?.[1]
+      expect(context).toContain("original AAA video game")
+      expect(context).toContain("playable protagonist")
+      if (enabled) expect(context).toContain("A co-op adventure with dry humor.")
+      else expect(context).not.toContain("A co-op adventure with dry humor.")
+      expect(script).toHaveBeenCalledWith(parameters, "Eclipse Protocol", context)
+
+      useStore.getState().setMode("blockbuster")
+      useStore.getState().setMovieTitle("")
+      expect(await useStore.getState().generateScript(mock(() => {}))).toBe(true)
+      const movieContext = enabled ? "A co-op adventure with dry humor." : ""
+      expect(title).toHaveBeenLastCalledWith(parameters, movieContext)
+      expect(script).toHaveBeenLastCalledWith(parameters, "Eclipse Protocol", movieContext)
+    })
+  }
+
   for (const valid of [true, false]) {
     it(`processes context and exposes editable fields (valid JSON: ${valid})`, async () => {
       const client = new api.ApiClient("test-key", "")

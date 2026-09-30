@@ -1,0 +1,62 @@
+{
+  "genre": [
+    "Open-World Action RPG",
+    "Survival Horror",
+    "Tactical Sci-Fi Shooter",
+    "Dark Fantasy Soulslike",
+    "Stealth Action Adventure",
+    "Post-Apocalyptic Survival",
+    "Space Exploration RPG",
+    "Mythological Action Adventure",
+    "Cyberpunk Immersive Sim",
+    "Mech Combat"
+  ],
+  "setting": [
+    "A Fallen Kingdom Beneath an Eternal Eclipse",
+    "A Neon Megacity Ruled by Artificial Intelligence",
+    "An Abandoned Colony on the Edge of the Galaxy",
+    "A Quarantined City Overrun by Mutations",
+    "A War-Torn Archipelago of Floating Islands",
+    "A Frozen Wasteland Hiding an Ancient Civilization",
+    "A Living Planet That Reacts to Every Choice",
+    "A Crumbling Realm Where Gods Walk Among Mortals",
+    "A Corporate Space Station on the Brink of Collapse",
+    "A Shattered Earth Reclaimed by Giant Machines"
+  ],
+  "character": [
+    "An Exiled Knight Bound to a Forbidden Relic",
+    "A Cybernetic Mercenary With Stolen Memories",
+    "The Last Ranger of a Destroyed Colony",
+    "A Survivor Carrying the Only Cure",
+    "A Rogue Assassin Hunted by Their Own Order",
+    "A Rookie Mech Pilot With an Experimental Machine",
+    "A Monster Hunter Marked by Their Prey",
+    "A Defector From an Interstellar Empire",
+    "A Demigod Stripped of Their Powers",
+    "A Scavenger Who Can Rewind Their Final Moments"
+  ],
+  "conflict": [
+    "Stop an Ancient Entity Before It Devours the World",
+    "Choose Which Rival Faction Will Control the Future",
+    "Expose a Corporation Turning Citizens Into Weapons",
+    "Survive a Hunt Where Every Death Changes the World",
+    "Break a Curse That Resets the Kingdom Every Night",
+    "Reclaim Humanity's Last City From a Machine Army",
+    "Seal a Rift Connecting Hostile Realities",
+    "Rescue a Missing Crew Before the Colony Goes Dark",
+    "Defy the Gods Before They Erase Mortal Free Will",
+    "Lead a Rebellion Against an Empire That Predicts Every Move"
+  ],
+  "plotTwist": [
+    "The Final Boss Is a Future Version of the Protagonist",
+    "The Companion Has Been Guiding the Enemy All Along",
+    "Every Respawn Strengthens the Enemy",
+    "The World Is Built From the Protagonist's Lost Memories",
+    "The Cure Will Destroy the Civilization It Was Meant to Save",
+    "The Monsters Are the Kingdom's Original Defenders",
+    "The Enemy AI Is Trying to Prevent a Greater Catastrophe",
+    "The Chosen Hero Was Engineered by the Villain",
+    "Victory in One Realm Means Sacrificing Another",
+    "The Protagonist's Powers Are Keeping the Catastrophe Alive"
+  ]
+}

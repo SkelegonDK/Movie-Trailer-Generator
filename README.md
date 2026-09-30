@@ -6,7 +6,7 @@ This is the Next.js replacement for the original Python/Streamlit app. The old c
 
 ## Features
 
-- Hollywood, Stupid, and Custom modes for genre, setting, character, conflict, and plot twist.
+- Custom, Blockbuster (the default), AAA Game, and Stupid modes for genre, setting, character, conflict, and plot twist. AAA Game uses game-specific parameters and cinematic game-reveal direction for generated titles and scripts.
 - Editable movie titles and trailer scripts generated through OpenRouter.
 - Poster generation through OpenRouter, with a structured cinematic art direction prompt.
 - ElevenLabs narration mixed with the included background music in the browser.

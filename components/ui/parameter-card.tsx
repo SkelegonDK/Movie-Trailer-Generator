@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button"
 import { useId } from "react"
 import { Label } from "./label"
 import { Shuffle } from "lucide-react"
+import type { ParameterMode } from "@/lib/parameter-modes"
 
 interface ParameterCardProps {
   title: string
   disabled?: boolean
   value: string
   options: string[]
-  mode: "hollywood" | "stupid" | "custom"
+  mode: ParameterMode
   onValueChange: (value: string) => void
   onRandomize: () => void
 }

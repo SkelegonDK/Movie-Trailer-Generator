@@ -4,6 +4,7 @@ import { Loader2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
 import { AnimatePresence, motion } from "motion/react"
+import { PARAMETER_MODES } from "@/lib/parameter-modes"
 
 const fields = [
   ["genre", "Genre"],
@@ -64,7 +65,7 @@ export function MovieDetails({ onEdit }: { onEdit: () => void }) {
               Context{customContext && !customContextEnabled ? " · not in use" : ""}
             </dt>
             <dd className="whitespace-pre-wrap text-sm leading-relaxed">
-              {customContext || (customContextEnabled ? "Describe your idea in the Idea section." : `${mode === "hollywood" ? "Hollywood" : mode === "stupid" ? "Stupid" : "Custom"} mode. No custom context added.`)}
+              {customContext || (customContextEnabled ? "Describe your idea in the Idea section." : `${PARAMETER_MODES[mode].label} mode. No custom context added.`)}
             </dd>
           </div>
         </dl>

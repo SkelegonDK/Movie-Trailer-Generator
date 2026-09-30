@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Shuffle, Wand2, HelpCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import hollywoodParameters from "../assets/hollywood-parameters.json"
-import stupidParameters from "../assets/stupid-parameters.json"
+import { PARAMETER_MODES, type ParameterMode } from "@/lib/parameter-modes"
 import {
   Dialog,
   DialogContent,
@@ -41,9 +40,10 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
     processCustomContext,
   } = useStore()
   const { toast } = useToast()
+  const source = PARAMETER_MODES[mode].parameters
 
   const handleRandomizeAll = () => {
-    const source = mode === "hollywood" ? hollywoodParameters : stupidParameters
+    if (!source) return
     const randomParameters = {
       genre: source.genre[Math.floor(Math.random() * source.genre.length)],
       setting: source.setting[Math.floor(Math.random() * source.setting.length)],
@@ -56,15 +56,9 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
   }
 
   const handleRandomizeParameter = (param: keyof typeof parameters) => {
-    const source = mode === "hollywood" ? hollywoodParameters : stupidParameters
-    const options = {
-      genre: source.genre,
-      setting: source.setting,
-      character: source.character,
-      conflict: source.conflict,
-      plotTwist: source.plotTwist,
-    }
-    setParameters({ ...parameters, [param]: options[param][Math.floor(Math.random() * options[param].length)] })
+    if (!source) return
+    const options = source[param]
+    setParameters({ ...parameters, [param]: options[Math.floor(Math.random() * options.length)] })
   }
 
   const handleGenerateScript = async () => {
@@ -72,15 +66,7 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
   }
 
   const getOptionsFor = (param: keyof typeof parameters) => {
-    const source = mode === "hollywood" ? hollywoodParameters : stupidParameters
-    const options = {
-      genre: source.genre,
-      setting: source.setting,
-      character: source.character,
-      conflict: source.conflict,
-      plotTwist: source.plotTwist,
-    }
-    return options[param]
+    return source?.[param] ?? []
   }
 
   return (
@@ -104,14 +90,14 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
             />
           </div>
           {!customContextEnabled && (<>
-          <Select disabled={disabled || isGenerating} value={mode} onValueChange={value => setMode(value as "hollywood" | "stupid" | "custom")}>
+          <Select disabled={disabled || isGenerating} value={mode} onValueChange={value => setMode(value as ParameterMode)}>
             <SelectTrigger className="w-[180px]" aria-label="Parameter mode">
               <SelectValue placeholder="Choose mode" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="hollywood">Hollywood</SelectItem>
-              <SelectItem value="stupid">Stupid</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
+              {Object.entries(PARAMETER_MODES).map(([id, config]) => (
+                <SelectItem key={id} value={id}>{config.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Dialog>
@@ -128,18 +114,12 @@ export function ParameterSelection({ disabled = false, onGenerated }: { disabled
                 </DialogDescription>
               </DialogHeader>
               <dl className="space-y-3 text-sm">
-                <div>
-                  <dt className="font-semibold">Hollywood</dt>
-                  <dd className="text-muted-foreground">Generates more conventional, but still funny, trailer ideas.</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold">Stupid</dt>
-                  <dd className="text-muted-foreground">Generates completely absurd and nonsensical ideas for maximum humor.</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold">Custom</dt>
-                  <dd className="text-muted-foreground">Lets you write your own parameters from scratch.</dd>
-                </div>
+                {Object.entries(PARAMETER_MODES).map(([id, config]) => (
+                  <div key={id}>
+                    <dt className="font-semibold">{config.label}</dt>
+                    <dd className="text-muted-foreground">{config.description}</dd>
+                  </div>
+                ))}
               </dl>
             </DialogContent>
           </Dialog>

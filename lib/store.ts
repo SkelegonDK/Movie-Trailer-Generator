@@ -4,14 +4,7 @@ import { createAudioBlob, saveAudioTrack, convertAudioBufferToWavArrayBuffer, mi
 import { stretchMusicToVoiceover } from './time-stretch'
 import { BACKGROUND_MUSIC_TRACKS } from './audio-assets'
 import { DEFAULT_CAPTION_STYLE, CaptionStyle } from './caption-style'
-
-interface MovieParameters {
-  genre: string
-  setting: string
-  character: string
-  conflict: string
-  plotTwist: string
-}
+import { DEFAULT_PARAMETER_MODE, getGenerationContext, type MovieParameters, type ParameterMode } from './parameter-modes'
 
 interface AppState {
   parameters: MovieParameters
@@ -31,7 +24,7 @@ interface AppState {
     message: string
     audioUrl?: string
   }
-  mode: 'hollywood' | 'stupid' | 'custom'
+  mode: ParameterMode
   posterStatus: 'idle' | 'loading' | 'ready'
   posterUrl: string | null
   trailerAudioBuffer: AudioBuffer | null
@@ -56,7 +49,7 @@ interface AppState {
   setIsGenerating: (isGenerating: boolean) => void
   setIsGeneratingAudio: (isGeneratingAudio: boolean) => void
   setAudioGenerationStatus: (status: AppState['audioGenerationStatus']) => void
-  setMode: (mode: 'hollywood' | 'stupid' | 'custom') => void
+  setMode: (mode: ParameterMode) => void
   setPosterStatus: (status: 'idle' | 'loading' | 'ready') => void
   setPosterUrl: (url: string | null) => void
   setTrailerAudioBuffer: (buffer: AudioBuffer | null) => void
@@ -91,7 +84,7 @@ export const useStore = create<AppState>((set) => ({
     status: "generating",
     message: "",
   },
-  mode: 'hollywood',
+  mode: DEFAULT_PARAMETER_MODE,
   posterStatus: 'idle',
   posterUrl: null,
   trailerAudioBuffer: null,
@@ -159,6 +152,7 @@ export const useStore = create<AppState>((set) => ({
     if (state.isGenerating || state.isProcessingContext || (state.customContextEnabled && !state.contextFieldsVisible)) return false;
     const { parameters, movieTitle, setMovieTitle, setCurrentScript, setIsGenerating } = state;
     const customContext = state.customContextEnabled ? state.customContext.trim() : "";
+    const generationContext = getGenerationContext(state.mode, customContext);
 
     if (!parameters.genre) {
       toast({
@@ -176,11 +170,11 @@ export const useStore = create<AppState>((set) => ({
       if (!apiClient) throw new Error("Please add an OpenRouter key in Settings.");
       let titleToUse = movieTitle;
       if (!titleToUse) {
-        titleToUse = await apiClient.generateMovieTitle(parameters, customContext);
+        titleToUse = await apiClient.generateMovieTitle(parameters, generationContext);
         setMovieTitle(titleToUse);
       }
 
-      const script = await apiClient.generateScript(parameters, titleToUse, customContext);
+      const script = await apiClient.generateScript(parameters, titleToUse, generationContext);
       setCurrentScript(script);
 
       toast({
