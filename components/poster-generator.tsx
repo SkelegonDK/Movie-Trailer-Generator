@@ -7,15 +7,18 @@ import { MoviePoster } from '@/components/ui/movie-poster'
 import { useStore } from "@/lib/store"
 import { generatePosterData, generateMoviePoster } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
+import { archiveGeneratedContent } from "@/lib/content-library"
 
 export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: boolean; onGenerated?: () => void }) {
   const {
     movieTitle,
     parameters,
     currentScript,
+    mode,
     setPosterData,
     posterDataError,
     setPosterDataError,
+    posterUrl,
     posterStatus,
     setPosterStatus,
     setPosterUrl,
@@ -85,6 +88,8 @@ export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: 
         return
       }
       setPosterUrl(imageResult.url)
+      const saved = await archiveGeneratedContent({ type: "poster", title: movieTitle, script: currentScript, parameters, mode, url: imageResult.url })
+      if (!saved) toast({ title: "Poster wasn't saved to Library", description: "Your poster is ready here. Browser storage may be full or unavailable.", variant: "destructive" })
       toast({
         title: "Poster Image Generated!",
         description: "Successfully generated the poster image.",
@@ -123,7 +128,7 @@ export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: 
             ) : (
               <ImageIcon className="w-4 h-4" />
             )}
-            {posterStatus === 'loading' ? "Creating your poster…" : "Generate poster"}
+            {posterStatus === 'loading' ? "Creating your poster…" : posterUrl ? "Regenerate" : "Generate poster"}
           </Button>
         </CardContent>
       </Card>

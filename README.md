@@ -13,6 +13,7 @@ This is the Next.js replacement for the original Python/Streamlit app. The old c
 - Pitch-preserving music stretching to fit the voiceover and a downloadable WAV mix.
 - Vertical trailer video with a poster background, live preview, and adjustable captions.
 - MP4 export when supported by the browser, with WebM as a fallback.
+- A searchable Library for reviewing, playing, downloading, and deleting generated scripts, audio, posters, and videos.
 
 ## Run locally
 
@@ -52,7 +53,9 @@ The workflow runs on one page with sliding Idea, Script, Audio, Poster, and Vide
 4. Generate the movie poster.
 5. Preview the video, adjust caption size, alignment, position, capitalization, and words per caption, then generate and download it.
 
-Video rendering happens in the browser in real time. Keep the tab open until export finishes. Captions are estimated from the script and audio duration rather than provider word timestamps. Download outputs you want to keep before reloading the page.
+Video rendering happens in the browser in real time. Keep the tab open until export finishes. Captions are estimated from the script and audio duration rather than provider word timestamps.
+
+Successful generations are saved automatically in the [Library](http://localhost:3000/library), including the original files and their source scripts. Search by title, script, or movie parameters; filter by content type; and open an item to review or download it. Library files are stored in IndexedDB in this browser and survive reloads. Clearing site data removes them, so download copies you want to keep or share. If browser storage is full or unavailable, generation still completes and a notification explains that the output wasn't saved. Audio from the older session history is imported when its original file is still available.
 
 ## Development
 

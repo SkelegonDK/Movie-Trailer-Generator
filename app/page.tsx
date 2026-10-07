@@ -11,6 +11,7 @@ import { MovieDetails } from "@/components/movie-details"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useStore } from "@/lib/store"
+import { getWorkflowAccess } from "@/lib/workflow"
 import { motion, useReducedMotion } from "motion/react"
 
 const steps = [
@@ -34,6 +35,14 @@ export default function GeneratorPage() {
   } = useStore()
   const index = steps.findIndex((item) => item.id === step)
   const busy = isProcessingContext || isGenerating || isGeneratingAudio || posterStatus === "loading" || isGeneratingVideo
+  const access = getWorkflowAccess({ currentScript, trailerAudioBuffer, posterUrl, posterStatus })
+  const nextStep = steps[index + 1]?.id
+  const canAdvance = !!nextStep && access[nextStep] && !busy
+  const missingAssetMessage = !currentScript.trim()
+    ? "Generate a script to continue."
+    : !trailerAudioBuffer
+      ? "Generate trailer audio to continue."
+      : "Generate a poster to continue."
   const complete = {
     idea: !!parameters.genre.trim(),
     script: !!currentScript.trim(),
@@ -45,9 +54,22 @@ export default function GeneratorPage() {
   const advanceFrom = useCallback((from: Step) => {
     setStep((current) => {
       if (current !== from) return current
-      return steps[Math.min(steps.findIndex((item) => item.id === from) + 1, steps.length - 1)].id
+      const next = steps[Math.min(steps.findIndex((item) => item.id === from) + 1, steps.length - 1)].id
+      return getWorkflowAccess(useStore.getState())[next] ? next : current
     })
   }, [])
+
+  const navigateTo = (target: Step) => {
+    if (getWorkflowAccess(useStore.getState())[target]) setStep(target)
+  }
+
+  useEffect(() => {
+    const available = getWorkflowAccess({ currentScript, trailerAudioBuffer, posterUrl, posterStatus })
+    if (!available[step]) {
+      const fallback = steps.slice(0, steps.findIndex((item) => item.id === step)).reverse().find((item) => available[item.id])
+      setStep(fallback?.id ?? "idea")
+    }
+  }, [step, currentScript, trailerAudioBuffer, posterUrl, posterStatus])
 
   useEffect(() => {
     if (previousStep.current === step) return
@@ -75,10 +97,10 @@ export default function GeneratorPage() {
           <MovieDetails onEdit={() => setStep("idea")} />
         </motion.div>
 
-        <Tabs value={step} onValueChange={(value) => setStep(value as Step)} className="flex min-h-0 min-w-0 flex-col gap-4 xl:col-start-1 xl:row-start-1">
+        <Tabs value={step} onValueChange={(value) => navigateTo(value as Step)} className="flex min-h-0 min-w-0 flex-col gap-4 xl:col-start-1 xl:row-start-1">
           <TabsList aria-label="Trailer workflow" className="grid h-auto shrink-0 grid-cols-5 gap-0 rounded-none border-b bg-transparent p-0">
             {steps.map((item, i) => (
-              <TabsTrigger key={item.id} value={item.id} className="workflow-tab relative min-h-12 min-w-0 gap-2 rounded-none px-1 py-3 text-xs transition-colors hover:text-foreground data-[state=active]:text-foreground sm:px-3 sm:text-sm">
+              <TabsTrigger key={item.id} value={item.id} disabled={!access[item.id] || (busy && i > index)} className="workflow-tab relative min-h-12 min-w-0 gap-2 rounded-none px-1 py-3 text-xs transition-colors hover:text-foreground data-[state=active]:text-foreground sm:px-3 sm:text-sm">
                 <span aria-hidden className="hidden h-5 w-5 shrink-0 items-center justify-center font-mono text-[10px] text-muted-foreground sm:flex">
                   {complete[item.id] ? <Check className="h-3 w-3 text-success" /> : `0${i + 1}`}
                 </span>
@@ -107,8 +129,8 @@ export default function GeneratorPage() {
             <Button variant="outline" disabled={index === 0} onClick={() => setStep(steps[index - 1].id)}>
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
-            <p className="hidden text-sm text-muted-foreground sm:block">{index === 4 ? "Ready for the big screen?" : "One scene at a time."}</p>
-            <Button variant="default" disabled={index === steps.length - 1} onClick={() => setStep(steps[index + 1].id)}>
+            <p className="hidden text-sm text-muted-foreground sm:block">{index === 4 ? "Ready for the big screen?" : busy ? "Preparing your assets…" : canAdvance ? "One scene at a time." : missingAssetMessage}</p>
+            <Button variant="default" disabled={!canAdvance} onClick={() => nextStep && navigateTo(nextStep)}>
               Next <ArrowRight className="h-4 w-4" />
             </Button>
           </footer>

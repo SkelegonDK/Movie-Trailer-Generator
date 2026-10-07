@@ -5,6 +5,7 @@ import { stretchMusicToVoiceover } from './time-stretch'
 import { BACKGROUND_MUSIC_TRACKS } from './audio-assets'
 import { DEFAULT_CAPTION_STYLE, CaptionStyle } from './caption-style'
 import { DEFAULT_PARAMETER_MODE, getGenerationContext, type MovieParameters, type ParameterMode } from './parameter-modes'
+import { archiveGeneratedContent } from './content-library'
 
 interface AppState {
   parameters: MovieParameters
@@ -177,6 +178,9 @@ export const useStore = create<AppState>((set) => ({
       const script = await apiClient.generateScript(parameters, titleToUse, generationContext);
       setCurrentScript(script);
 
+      const saved = await archiveGeneratedContent({ type: "script", title: titleToUse, script, parameters, mode: state.mode });
+      if (!saved) toast({ title: "Script wasn't saved to Library", description: "Your script is ready here. Browser storage may be full or unavailable.", variant: "destructive" });
+
       toast({
         title: "Script ready",
         description: "Review your script, then move to Audio to give it a voice.",
@@ -200,7 +204,7 @@ export const useStore = create<AppState>((set) => ({
 
   generateTrailerAudio: async (toast: any, audioCtxRef: React.MutableRefObject<AudioContext | null>) => {
     if (useStore.getState().isGeneratingAudio) return false;
-    const { currentScript, movieTitle, parameters, setIsGeneratingAudio, setAudioGenerationStatus, setTrailerAudioBuffer } = useStore.getState();
+    const { currentScript, movieTitle, parameters, mode, setIsGeneratingAudio, setAudioGenerationStatus, setTrailerAudioBuffer } = useStore.getState();
 
     if (!currentScript.trim()) {
       toast({ title: "No Script Available", description: "Please generate a script first.", variant: "destructive" });
@@ -237,7 +241,13 @@ export const useStore = create<AppState>((set) => ({
         throw new Error("The script changed during generation. Generate audio again for the current script.");
       }
       setTrailerAudioBuffer(mixedAudioBuffer);
-      const audioUrl = createAndSaveAudio(mixedAudioBuffer, movieTitle, currentScript, parameters);
+      const { audioUrl, id } = createAndSaveAudio(mixedAudioBuffer, movieTitle, currentScript, parameters);
+
+      const saved = await archiveGeneratedContent({
+        id, type: "audio", title: movieTitle, script: currentScript,
+        parameters, mode, url: audioUrl, duration: mixedAudioBuffer.duration, extension: "wav",
+      });
+      if (!saved) toast({ title: "Audio wasn't saved to Library", description: "Your audio is ready here. Download it before leaving this page.", variant: "destructive" });
 
       setAudioGenerationStatus({ show: true, status: "success", message: "Trailer audio ready!", audioUrl });
       toast({ title: "Trailer audio ready", description: "Listen or download in Audio, or continue with your movie poster." });
@@ -286,7 +296,7 @@ async function fetchAndDecodeMusic(audioCtx: AudioContext, setAudioGenerationSta
   return await audioCtx.decodeAudioData(musicArrayBuffer.slice(0));
 }
 
-function createAndSaveAudio(mixedBuffer: AudioBuffer, title: string, script: string, parameters: any): string {
+function createAndSaveAudio(mixedBuffer: AudioBuffer, title: string, script: string, parameters: any): { audioUrl: string; id: string } {
   const finalOutputArrayBuffer = convertAudioBufferToWavArrayBuffer(mixedBuffer);
   const audioUrl = createAudioBlob(finalOutputArrayBuffer);
   const newAudioTrack: AudioTrack = {
@@ -300,5 +310,5 @@ function createAndSaveAudio(mixedBuffer: AudioBuffer, title: string, script: str
     backgroundMusicId: BACKGROUND_MUSIC_TRACKS[0].id,
   };
   saveAudioTrack(newAudioTrack);
-  return audioUrl;
+  return { audioUrl, id: newAudioTrack.id };
 }

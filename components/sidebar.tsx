@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Film, Menu, Settings } from "lucide-react"
+import { Film, Library, Menu, Settings } from "lucide-react"
 import { motion } from "motion/react"
 
 import logo from "@/assets/coffe_movie_x2.png"
@@ -22,6 +22,7 @@ import {
 
 const navigation = [
   { name: "Generate", href: "/", icon: Film },
+  { name: "Library", href: "/library", icon: Library },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -118,7 +119,7 @@ export function Sidebar() {
           <SheetContent side="left" className="w-72 p-0">
             <SheetHeader className="sr-only">
               <SheetTitle>Navigation</SheetTitle>
-              <SheetDescription>Choose the trailer generator or API key settings.</SheetDescription>
+              <SheetDescription>Choose the trailer generator, content library, or API key settings.</SheetDescription>
             </SheetHeader>
             <SidebarBrand className="pt-10" />
             <div className="px-6 py-6">

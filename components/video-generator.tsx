@@ -25,6 +25,7 @@ import {
   ensureCaptionFont,
 } from "@/lib/video-renderer"
 import { renderTrailerVideo, type RenderedVideo } from "@/lib/video-generator"
+import { archiveGeneratedContent } from "@/lib/content-library"
 import {
   FONT_SIZE_MAX,
   FONT_SIZE_MIN,
@@ -121,6 +122,8 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
   const {
     movieTitle,
     currentScript,
+    parameters,
+    mode,
     posterUrl,
     posterStatus,
     trailerAudioBuffer,
@@ -318,7 +321,17 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
         URL.revokeObjectURL(video.url)
         return
       }
+      const saved = await archiveGeneratedContent({
+        type: "video", title: movieTitle, script: currentScript,
+        parameters, mode,
+        url: video.url, extension: video.extension, duration: video.duration,
+      })
+      if (controller.signal.aborted) {
+        URL.revokeObjectURL(video.url)
+        return
+      }
       setRenderedVideo(video)
+      if (!saved) toast({ title: "Video wasn't saved to Library", description: "Your video is ready here. Download it before leaving this page.", variant: "destructive" })
       setVideoGenerationStatus({
         show: true,
         status: "success",
