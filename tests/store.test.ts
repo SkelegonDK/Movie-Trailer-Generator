@@ -120,13 +120,27 @@ describe("generation state", () => {
   })
 
   it("invalidates audio made for a different script", () => {
+    const revoke = spyOn(URL, "revokeObjectURL").mockImplementation(() => {})
     const buffer = { duration: 1 } as AudioBuffer
     useStore.setState({ currentScript: "Original", trailerAudioBuffer: buffer,
       audioGenerationStatus: { show: true, status: "success", message: "Ready", audioUrl: "blob:old" } })
     useStore.getState().setCurrentScript("Original")
     expect(useStore.getState().trailerAudioBuffer).toBe(buffer)
+    expect(revoke).not.toHaveBeenCalled()
     useStore.getState().setCurrentScript("Rewritten")
     expect(useStore.getState().trailerAudioBuffer).toBeNull()
     expect(useStore.getState().audioGenerationStatus.show).toBe(false)
+    expect(revoke).toHaveBeenCalledWith("blob:old")
+  })
+
+  it("releases replaced audio URLs but preserves the current playback URL", () => {
+    const revoke = spyOn(URL, "revokeObjectURL").mockImplementation(() => {})
+    const status = { show: true, status: "success" as const, message: "Ready", audioUrl: "blob:first" }
+    useStore.getState().setAudioGenerationStatus(status)
+    useStore.getState().setAudioGenerationStatus({ ...status, message: "Still ready" })
+    expect(revoke).not.toHaveBeenCalled()
+    useStore.getState().setAudioGenerationStatus({ ...status, audioUrl: "blob:second" })
+    expect(revoke).toHaveBeenCalledTimes(1)
+    expect(revoke).toHaveBeenCalledWith("blob:first")
   })
 })

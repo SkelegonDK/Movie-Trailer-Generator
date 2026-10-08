@@ -55,7 +55,11 @@ The workflow runs on one page with sliding Idea, Script, Audio, Poster, and Vide
 
 Video rendering happens in the browser in real time. Keep the tab open until export finishes. Captions are estimated from the script and audio duration rather than provider word timestamps.
 
-Successful generations are saved automatically in the [Library](http://localhost:3000/library), including the original files and their source scripts. Search by title, script, or movie parameters; filter by content type; and open an item to review or download it. Library files are stored in IndexedDB in this browser and survive reloads. Clearing site data removes them, so download copies you want to keep or share. If browser storage is full or unavailable, generation still completes and a notification explains that the output wasn't saved. Audio from the older session history is imported when its original file is still available.
+Successful generations are saved automatically in the [Library](http://localhost:3000/library), including the original files and their source scripts. Search by title, script, or movie parameters; filter by content type; and open an item to review or download it. Generated trailer audio (the WAV narration and music mix) is also saved on the server with its source script and metadata. The Library reads that archive directly, so clearing browser storage does not remove backed-up audio. Scripts, posters, and videos remain in IndexedDB in this browser; clearing site data removes those files.
+
+The audio archive defaults to `.trailer-library/audio` in the project directory, outside the build cache. Set `TRAILER_AUDIO_LIBRARY_DIR` in `.env.local` to an absolute path on persistent storage, then restart the server. Keep this directory backed up. On a hosted instance, use a persistent disk or volume; ephemeral/serverless filesystems do not provide durable retention. All browsers using the same server share its audio archive, and deleting audio in Library deletes the server copy too. Keep the instance local or access-controlled.
+
+Visit Library before clearing existing browser data to back up previously retained audio. Older session history is imported when its original file is still available. Audio already lost in a purge cannot be recovered. If an archive save fails, generation still completes and the notification asks you to download a copy. The Library reports when the server archive or browser storage is unavailable.
 
 ## Development
 

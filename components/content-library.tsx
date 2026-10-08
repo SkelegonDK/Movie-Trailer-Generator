@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { deleteAudioTrack, formatDuration } from "@/lib/audio-utils"
-import { deleteLibraryItem, getLibraryItems, importSessionAudio, LIBRARY_CHANGED_EVENT, type ContentType, type LibraryItem } from "@/lib/content-library"
+import { formatDuration } from "@/lib/audio-utils"
+import { deleteLibraryItem, getLibrarySnapshot, importBrowserAudio, importSessionAudio, LIBRARY_CHANGED_EVENT, type ContentType, type LibraryItem } from "@/lib/content-library"
 import { PARAMETER_MODES } from "@/lib/parameter-modes"
 import { cn } from "@/lib/utils"
 
@@ -22,7 +22,7 @@ const contentTypes = {
 const dateFormatter = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" })
 const parameterLabels = { genre: "Genre", setting: "Setting", character: "Main character", conflict: "Conflict", plotTwist: "Plot twist" } as const
 
-function useMediaUrl(media?: Blob) {
+function useMediaUrl(media?: Blob, savedUrl?: string) {
   const [url, setUrl] = useState<string>()
   useEffect(() => {
     if (!media) { setUrl(undefined); return }
@@ -30,12 +30,12 @@ function useMediaUrl(media?: Blob) {
     setUrl(next)
     return () => URL.revokeObjectURL(next)
   }, [media])
-  return url
+  return media ? url : savedUrl
 }
 
 function LibraryDownload({ item, compact = false }: { item: LibraryItem; compact?: boolean }) {
   const [scriptFile] = useState(() => item.type === "script" ? new Blob([item.script], { type: "text/plain;charset=utf-8" }) : undefined)
-  const url = useMediaUrl(item.type === "script" ? scriptFile : item.media)
+  const url = useMediaUrl(item.type === "script" ? scriptFile : item.media, item.mediaUrl)
   const title = item.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "untitled-trailer"
   if (!url) return <Button variant="ghost" disabled aria-label="Saved file unavailable"><Download /></Button>
   return (
@@ -52,7 +52,7 @@ function LibraryCard({ item, onReview, onDelete }: {
   onReview: (item: LibraryItem, button: HTMLButtonElement) => void
   onDelete: (item: LibraryItem, button: HTMLButtonElement) => void
 }) {
-  const url = useMediaUrl(item.media)
+  const url = useMediaUrl(item.media, item.mediaUrl)
   const Icon = contentTypes[item.type].icon
   return (
     <article className="group min-w-0 overflow-hidden rounded-lg border bg-card transition-colors hover:border-white/30">
@@ -96,7 +96,7 @@ function LibraryCard({ item, onReview, onDelete }: {
 }
 
 function ContentReview({ item }: { item: LibraryItem }) {
-  const url = useMediaUrl(item.media)
+  const url = useMediaUrl(item.media, item.mediaUrl)
   const [mediaError, setMediaError] = useState(false)
   return (
     <>
@@ -128,6 +128,9 @@ export function ContentLibrary() {
   const [items, setItems] = useState<LibraryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [audioArchiveAvailable, setAudioArchiveAvailable] = useState(true)
+  const [browserStorageAvailable, setBrowserStorageAvailable] = useState(true)
+  const [browserOnlyAudioCount, setBrowserOnlyAudioCount] = useState(0)
   const [reload, setReload] = useState(0)
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<ContentType | "all">("all")
@@ -146,8 +149,12 @@ export function ContentLibrary() {
     const refresh = async () => {
       const current = ++revision
       try {
-        const saved = await getLibraryItems()
-        if (alive && current === revision) { setItems(saved); setError(false) }
+        const saved = await getLibrarySnapshot()
+        if (alive && current === revision) {
+          setItems(saved.items); setAudioArchiveAvailable(saved.audioArchiveAvailable)
+          setBrowserStorageAvailable(saved.browserStorageAvailable)
+          setBrowserOnlyAudioCount(saved.browserOnlyAudioCount); setError(false)
+        }
       } catch {
         if (alive && current === revision) setError(true)
       } finally {
@@ -156,6 +163,7 @@ export function ContentLibrary() {
     }
     const initialize = async () => {
       try { await importSessionAudio() } catch { /* refresh reports storage errors */ }
+      try { await importBrowserAudio() } catch { /* refresh reports archive availability */ }
       if (alive) void refresh()
     }
     void initialize()
@@ -175,13 +183,12 @@ export function ContentLibrary() {
     if (!toDelete) return
     setDeleting(true)
     try {
-      await deleteLibraryItem(toDelete.id)
-      if (toDelete.type === "audio") deleteAudioTrack(toDelete.id)
+      await deleteLibraryItem(toDelete.id, toDelete.type)
       setItems((current) => current.filter((item) => item.id !== toDelete.id))
       setToDelete(null)
       toast({ title: "Removed from Library" })
     } catch {
-      toast({ title: "Couldn't delete this item", description: "Browser storage is unavailable. Try again.", variant: "destructive" })
+      toast({ title: "Couldn't delete this item", description: "Library storage is unavailable. Try again when the server and browser storage are available.", variant: "destructive" })
     } finally { setDeleting(false) }
   }
 
@@ -219,8 +226,12 @@ export function ContentLibrary() {
         </div>
       </section>
 
+      {!loading && !error && !audioArchiveAvailable && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">The server audio archive is unavailable. Showing browser copies only; reconnect to the server to see your backed-up audio.</p>}
+      {!loading && !error && audioArchiveAvailable && browserOnlyAudioCount > 0 && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">{browserOnlyAudioCount} {browserOnlyAudioCount === 1 ? "audio file is" : "audio files are"} only in this browser and could not be backed up. Download a copy before clearing browser data. Reopen Library to retry the backup.</p>}
+      {!loading && !error && !browserStorageAvailable && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">Browser storage is unavailable. Backed-up audio is still available; scripts, posters, and videos need browser storage.</p>}
+
       {loading ? <div className="flex min-h-64 items-center justify-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading your library…</div>
-        : error ? <div role="alert" className="studio-panel space-y-4 rounded-lg border p-8"><h2 className="text-lg">Your library couldn't be opened.</h2><p className="text-sm text-muted-foreground">Allow browser storage for this site, then try again.</p><Button variant="outline" onClick={() => { setLoading(true); setReload((value) => value + 1) }}>Try again</Button></div>
+        : error ? <div role="alert" className="studio-panel space-y-4 rounded-lg border p-8"><h2 className="text-lg">Your library couldn't be opened.</h2><p className="text-sm text-muted-foreground">Check the server connection and allow browser storage, then try again.</p><Button variant="outline" onClick={() => { setLoading(true); setReload((value) => value + 1) }}>Try again</Button></div>
         : items.length === 0 ? <div className="studio-panel flex min-h-[380px] flex-col items-center justify-center rounded-lg border px-6 py-12 text-center">
           <Clapperboard className="mb-6 h-14 w-14 stroke-[1] text-muted-foreground" />
           <p className="studio-eyebrow mb-3 text-muted-foreground">The archive starts with an idea</p>
@@ -232,7 +243,7 @@ export function ContentLibrary() {
         : filtered.length === 0 ? <div className="studio-panel space-y-3 rounded-lg border px-6 py-16 text-center"><Search className="mx-auto mb-5 h-8 w-8 text-muted-foreground" /><h2 className="headline text-2xl">No matching content.</h2><p className="text-sm text-muted-foreground">Try another search or content type.</p><Button variant="outline" onClick={() => { setQuery(""); setFilter("all") }}>Clear filters</Button></div>
         : <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{filtered.map((item) => <LibraryCard key={item.id} item={item} onReview={(next, button) => { reviewButton.current = button; setSelected(next) }} onDelete={(next, button) => { deleteButton.current = button; setToDelete(next) }} />)}</div>}
 
-      <footer className="flex items-center gap-2 border-t pt-4 text-xs leading-relaxed text-muted-foreground"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground" />Saved in this browser. Download a copy to keep or share.</footer>
+      <footer className="flex items-center gap-2 border-t pt-4 text-xs leading-relaxed text-muted-foreground"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground" />Backed-up audio survives clearing browser data. Scripts, posters, and videos are saved in this browser.</footer>
 
       <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null) }}>
         <DialogContent className="max-w-3xl" onCloseAutoFocus={(event) => { event.preventDefault(); reviewButton.current?.focus() }}>
@@ -241,7 +252,7 @@ export function ContentLibrary() {
       </Dialog>
       <AlertDialog open={!!toDelete} onOpenChange={(open) => { if (!open && !deleting) setToDelete(null) }}>
         <AlertDialogContent className="w-[calc(100vw-2rem)]" onCloseAutoFocus={(event) => { event.preventDefault(); if (deleteButton.current?.isConnected) deleteButton.current.focus(); else searchInput.current?.focus() }}>
-          <AlertDialogHeader><AlertDialogTitle>Remove from Library?</AlertDialogTitle><AlertDialogDescription className="[overflow-wrap:anywhere]">“{toDelete?.title}” will be removed from this browser. Download a copy first if you want to keep it.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Remove from Library?</AlertDialogTitle><AlertDialogDescription className="[overflow-wrap:anywhere]">“{toDelete?.title}” will be removed {toDelete?.type === "audio" ? "from the server archive and this browser" : "from this browser"}. Download a copy first if you want to keep it.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel><Button variant="destructive" loading={deleting} onClick={remove}>Delete {toDelete?.type}</Button></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

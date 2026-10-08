@@ -59,9 +59,14 @@ describe("content library", () => {
   test("imports available session audio once and skips expired object URLs", async () => {
     const track = { id: "legacy-audio", title: content.title, script: content.script, parameters: content.parameters, duration: 10, timestamp: new Date(1).toISOString(), backgroundMusicId: "music", url: "blob:available" }
     Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: { getItem: () => JSON.stringify([track, { ...track, id: "expired", url: "blob:expired" }]) } })
-    spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(new Response(new Blob(["audio bytes"], { type: "audio/wav" })))
-      .mockRejectedValue(new Error("URL expired"))
+    spyOn(globalThis, "fetch").mockImplementation((async (input: URL | RequestInfo, init?: RequestInit) => {
+      if (input === "/api/library/audio") {
+        if (init?.method === "POST") return Response.json(JSON.parse((init.body as FormData).get("metadata") as string))
+        return Response.json({ items: [], deletedIds: [] })
+      }
+      if (input === "blob:available") return new Response(new Blob(["audio bytes"], { type: "audio/wav" }))
+      throw new Error("URL expired")
+    }) as typeof globalThis.fetch)
     await importSessionAudio()
     await importSessionAudio()
     const items = await getLibraryItems()

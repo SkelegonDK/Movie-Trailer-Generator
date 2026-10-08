@@ -5,6 +5,7 @@
 
 # next.js
 /.next/
+/.trailer-library/
 /out/
 
 # production

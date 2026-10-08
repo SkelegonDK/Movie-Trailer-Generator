@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { getApiClientAsync } from './api-client'
-import { createAudioBlob, saveAudioTrack, convertAudioBufferToWavArrayBuffer, mixVoiceoverAndMusic, AudioTrack } from '@/lib/audio-utils'
+import { convertAudioBufferToWavArrayBuffer, mixVoiceoverAndMusic } from '@/lib/audio-utils'
 import { stretchMusicToVoiceover } from './time-stretch'
 import { BACKGROUND_MUSIC_TRACKS } from './audio-assets'
 import { DEFAULT_CAPTION_STYLE, CaptionStyle } from './caption-style'
@@ -102,16 +102,20 @@ export const useStore = create<AppState>((set) => ({
   setMovieTitle: (movieTitle) => set({ movieTitle }),
   setCustomContextEnabled: (customContextEnabled) => set({ customContextEnabled }),
   setCustomContext: (customContext) => set({ customContext, contextFieldsVisible: false }),
-  setCurrentScript: (currentScript) => set((state) => currentScript === state.currentScript ? {} : {
-    currentScript,
-    trailerAudioBuffer: null,
-    audioGenerationStatus: { show: false, status: "generating", message: "" },
+  setCurrentScript: (currentScript) => set((state) => {
+    if (currentScript === state.currentScript) return {}
+    if (state.audioGenerationStatus.audioUrl) URL.revokeObjectURL(state.audioGenerationStatus.audioUrl)
+    return { currentScript, trailerAudioBuffer: null, audioGenerationStatus: { show: false, status: "generating" as const, message: "" } }
   }),
   setPosterData: (posterData) => set({ posterData }),
   setPosterDataError: (posterDataError) => set({ posterDataError }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
   setIsGeneratingAudio: (isGeneratingAudio) => set({ isGeneratingAudio }),
-  setAudioGenerationStatus: (audioGenerationStatus) => set({ audioGenerationStatus }),
+  setAudioGenerationStatus: (audioGenerationStatus) => set((state) => {
+    const previous = state.audioGenerationStatus.audioUrl
+    if (previous && previous !== audioGenerationStatus.audioUrl) URL.revokeObjectURL(previous)
+    return { audioGenerationStatus }
+  }),
   setMode: (mode) => set({ mode }),
   setPosterStatus: (posterStatus) => set({ posterStatus }),
   setPosterUrl: (posterUrl) => set({ posterUrl }),
@@ -241,15 +245,18 @@ export const useStore = create<AppState>((set) => ({
         throw new Error("The script changed during generation. Generate audio again for the current script.");
       }
       setTrailerAudioBuffer(mixedAudioBuffer);
-      const { audioUrl, id } = createAndSaveAudio(mixedAudioBuffer, movieTitle, currentScript, parameters);
+      const media = new Blob([convertAudioBufferToWavArrayBuffer(mixedAudioBuffer)], { type: "audio/wav" });
+      const audioUrl = URL.createObjectURL(media);
+      const id = crypto.randomUUID();
+      // Playback owns its URL; retention receives the file itself.
+      setAudioGenerationStatus({ show: true, status: "success", message: "Trailer audio ready!", audioUrl });
 
       const saved = await archiveGeneratedContent({
         id, type: "audio", title: movieTitle, script: currentScript,
-        parameters, mode, url: audioUrl, duration: mixedAudioBuffer.duration, extension: "wav",
+        parameters, mode, media, duration: mixedAudioBuffer.duration, extension: "wav",
       });
-      if (!saved) toast({ title: "Audio wasn't saved to Library", description: "Your audio is ready here. Download it before leaving this page.", variant: "destructive" });
+      if (!saved) toast({ title: "Audio wasn't backed up", description: "Your audio is ready here, but couldn't be saved to the server archive. Download a copy before clearing browser data.", variant: "destructive" });
 
-      setAudioGenerationStatus({ show: true, status: "success", message: "Trailer audio ready!", audioUrl });
       toast({ title: "Trailer audio ready", description: "Listen or download in Audio, or continue with your movie poster." });
       return true;
 
@@ -294,21 +301,4 @@ async function fetchAndDecodeMusic(audioCtx: AudioContext, setAudioGenerationSta
   const musicArrayBuffer = await musicResponse.arrayBuffer();
   setAudioGenerationStatus({ show: true, status: "generating", message: "Decoding music..." });
   return await audioCtx.decodeAudioData(musicArrayBuffer.slice(0));
-}
-
-function createAndSaveAudio(mixedBuffer: AudioBuffer, title: string, script: string, parameters: any): { audioUrl: string; id: string } {
-  const finalOutputArrayBuffer = convertAudioBufferToWavArrayBuffer(mixedBuffer);
-  const audioUrl = createAudioBlob(finalOutputArrayBuffer);
-  const newAudioTrack: AudioTrack = {
-    id: `trailer-${Date.now()}`,
-    title: title || "Untitled Trailer",
-    script: script,
-    parameters: parameters,
-    url: audioUrl,
-    timestamp: new Date(),
-    duration: mixedBuffer.duration,
-    backgroundMusicId: BACKGROUND_MUSIC_TRACKS[0].id,
-  };
-  saveAudioTrack(newAudioTrack);
-  return { audioUrl, id: newAudioTrack.id };
 }
