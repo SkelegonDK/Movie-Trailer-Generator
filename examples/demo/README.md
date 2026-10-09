@@ -2,7 +2,7 @@
 
 This is a fictional, original demo with an illustrated SVG poster, a short script and procedural music. It demonstrates the app’s real 9:16 video renderer and estimated caption timing without API keys. It does not include narration or claim to demonstrate live AI generation. The studio screenshot shows the running application with sample inputs.
 
-The original poster, script and renderer source use the repository’s MIT license. The music is dedicated to the public domain under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), with no attribution required. It was synthesized without external samples by `scripts/generate-trailer-music.py`, included with the [dedication notice](../../licenses/trailer-music-CC0.txt) in the asset-provenance change.
+The original poster, script and renderer source use the repository’s MIT license. The music is dedicated to the public domain under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), with no attribution required. It was synthesized without external samples by [generate-music.py](generate-music.py); see its [dedication notice](music-CC0.txt). This demo cue is separate from the app’s original bundled soundtrack. Regenerate only the demo cue with `python3 examples/demo/generate-music.py` (Python 3 and ffmpeg with libmp3lame required).
 
 ## Reproduce the video
 
