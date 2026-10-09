@@ -1,6 +1,7 @@
 "use client"
 
-import { Loader2, Pencil } from "lucide-react"
+import { useState } from "react"
+import { ChevronDown, Loader2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
 import { AnimatePresence, motion } from "motion/react"
@@ -15,6 +16,7 @@ const fields = [
 ] as const
 
 export function MovieDetails({ onEdit }: { onEdit: () => void }) {
+  const [mobileDetailsOpen, setMobileDetailsOpen] = useState(false)
   const {
     parameters, movieTitle, customContext, customContextEnabled, mode,
     isProcessingContext, isGenerating, isGeneratingAudio, audioGenerationStatus,
@@ -39,11 +41,24 @@ export function MovieDetails({ onEdit }: { onEdit: () => void }) {
     <aside aria-label="Movie details" className="flex min-h-0 flex-col overflow-hidden rounded-lg border bg-[#121212]/95">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-1 xl:px-4 xl:py-3">
         <h2 className="studio-eyebrow text-muted-foreground">Your production</h2>
-        <Button variant="ghost" size="sm" onClick={onEdit} aria-label="Edit movie idea">
-          <Pencil className="h-4 w-4" /> Edit
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-11 p-0 min-[360px]:w-auto min-[360px]:px-3 sm:hidden"
+            aria-expanded={mobileDetailsOpen}
+            aria-controls="production-details"
+            aria-label={mobileDetailsOpen ? "Hide production details" : "Show production details"}
+            onClick={() => setMobileDetailsOpen((open) => !open)}
+          >
+            <span className="hidden min-[360px]:inline">Details</span> <ChevronDown aria-hidden className={`h-4 w-4 transition-transform ${mobileDetailsOpen ? "rotate-180" : ""}`} />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onEdit} aria-label="Edit movie idea">
+            <Pencil className="h-4 w-4" /> Edit
+          </Button>
+        </div>
       </div>
-      <div tabIndex={0} aria-label="Movie title, parameters, and context" className="min-h-0 overflow-y-auto overscroll-contain p-3 xl:p-4 [overflow-wrap:anywhere]">
+      <div id="production-details" tabIndex={0} aria-label="Movie title, parameters, and context" className={`${mobileDetailsOpen ? "block" : "hidden"} min-h-0 overflow-y-auto overscroll-contain p-3 sm:block xl:p-4 [overflow-wrap:anywhere]`}>
         <p className="mb-5 font-sans text-base font-medium leading-snug tracking-tight xl:text-xl">
           {movieTitle || "Your title will appear here"}
         </p>
