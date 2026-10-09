@@ -1,5 +1,8 @@
 "use client"
 
+import { PosterFreshness } from "@/components/poster-freshness"
+import { getPosterSource } from "@/lib/poster-source"
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useStore } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -128,6 +131,8 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
     parameters,
     mode,
     posterUrl,
+    posterSource,
+    posterReuseSource,
     posterStatus,
     trailerAudioBuffer,
     captionStyle,
@@ -150,6 +155,9 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
   const [previewTime, setPreviewTime] = useState(0)
   const [renderedVideo, setRenderedVideo] = useState<RenderedVideo | null>(null)
+
+  const currentPosterSource = getPosterSource({ movieTitle, parameters, currentScript, mode })
+  const posterNeedsReview = !!posterUrl && posterSource !== currentPosterSource && posterReuseSource !== currentPosterSource
 
   const audioDuration = trailerAudioBuffer?.duration ?? 0
 
@@ -289,7 +297,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
   }, [trailerAudioBuffer, audioDuration, previewTime, drawPreviewFrame, stopPreview])
 
   const handleGenerateVideo = async () => {
-    if (!posterUrl || !trailerAudioBuffer || renderAbortRef.current) return
+    if (!posterUrl || !trailerAudioBuffer || renderAbortRef.current || posterNeedsReview) return
     const controller = new AbortController()
     renderAbortRef.current = controller
     const { audioCtxRef } = getAudioEngineRefs()
@@ -433,6 +441,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
           </div>
 
           <div className="min-w-0 flex-1 space-y-6">
+            <PosterFreshness disabled={disabled || isGeneratingVideo} />
             <div className="rounded-lg border bg-muted/30 px-3">
               <InspectorRow label="Font size" value={captionStyle.fontSize.toFixed(1)}>
                 <Slider
@@ -542,7 +551,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
               onClick={handleGenerateVideo}
               variant="skeuomorphic-primary"
               aria-busy={isGeneratingVideo}
-              disabled={!canGenerate}
+              disabled={!canGenerate || posterNeedsReview}
               className="w-full sm:w-auto"
             >
               {isGeneratingVideo ? (

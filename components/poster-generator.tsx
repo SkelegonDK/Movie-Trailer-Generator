@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ImageIcon, Loader2 } from "lucide-react"
 import { MoviePoster } from '@/components/ui/movie-poster'
+import { PosterFreshness } from "@/components/poster-freshness"
+import { getPosterSource } from "@/lib/poster-source"
 import { useStore } from "@/lib/store"
 import { generatePosterData, generateMoviePoster } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
@@ -36,6 +38,7 @@ export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: 
       return
     }
 
+    const source = getPosterSource(useStore.getState())
     setPosterData(null)
     setPosterDataError(null)
     setPosterStatus('loading')
@@ -87,7 +90,7 @@ export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: 
         setPosterStatus('ready') // Allow retry
         return
       }
-      setPosterUrl(imageResult.url)
+      setPosterUrl(imageResult.url, source)
       const saved = await archiveGeneratedContent({ type: "poster", title: movieTitle, script: currentScript, parameters, mode, url: imageResult.url })
       if (!saved) toast({ title: "Poster wasn't saved to Library", description: "Your poster is ready here, but could not be saved to disk. Download a copy before leaving this page.", variant: "destructive" })
       toast({
@@ -116,6 +119,7 @@ export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: 
           <div className="w-full max-w-[240px] @3xl:max-w-xs mx-auto mb-4">
             <MoviePoster />
           </div>
+          <PosterFreshness disabled={disabled || posterStatus === "loading"} />
           <Button
             onClick={handleGenerateMoviePoster}
             variant="skeuomorphic-primary"

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { getPosterSource } from './poster-source'
 import { getApiClientAsync } from './api-client'
 import { convertAudioBufferToWavArrayBuffer, mixVoiceoverAndMusic } from '@/lib/audio-utils'
 import { stretchMusicToVoiceover } from './time-stretch'
@@ -28,6 +29,8 @@ interface AppState {
   mode: ParameterMode
   posterStatus: 'idle' | 'loading' | 'ready'
   posterUrl: string | null
+  posterSource: string | null
+  posterReuseSource: string | null
   trailerAudioBuffer: AudioBuffer | null
   captionStyle: CaptionStyle
   videoGenerationStatus: {
@@ -52,7 +55,8 @@ interface AppState {
   setAudioGenerationStatus: (status: AppState['audioGenerationStatus']) => void
   setMode: (mode: ParameterMode) => void
   setPosterStatus: (status: 'idle' | 'loading' | 'ready') => void
-  setPosterUrl: (url: string | null) => void
+  setPosterUrl: (url: string | null, source?: string) => void
+  acceptPosterReuse: () => void
   setTrailerAudioBuffer: (buffer: AudioBuffer | null) => void
   setCaptionStyle: (style: CaptionStyle) => void
   setVideoGenerationStatus: (status: AppState['videoGenerationStatus']) => void
@@ -88,6 +92,8 @@ export const useStore = create<AppState>((set) => ({
   mode: DEFAULT_PARAMETER_MODE,
   posterStatus: 'idle',
   posterUrl: null,
+  posterSource: null,
+  posterReuseSource: null,
   trailerAudioBuffer: null,
   captionStyle: DEFAULT_CAPTION_STYLE,
   videoGenerationStatus: {
@@ -118,7 +124,12 @@ export const useStore = create<AppState>((set) => ({
   }),
   setMode: (mode) => set({ mode }),
   setPosterStatus: (posterStatus) => set({ posterStatus }),
-  setPosterUrl: (posterUrl) => set({ posterUrl }),
+  setPosterUrl: (posterUrl, source) => set((state) => ({
+    posterUrl,
+    posterSource: posterUrl ? source ?? getPosterSource(state) : null,
+    posterReuseSource: null,
+  })),
+  acceptPosterReuse: () => set((state) => ({ posterReuseSource: state.posterUrl ? getPosterSource(state) : null })),
   setTrailerAudioBuffer: (trailerAudioBuffer) => set({ trailerAudioBuffer }),
   setCaptionStyle: (captionStyle) => set({ captionStyle }),
   setVideoGenerationStatus: (videoGenerationStatus) => set({ videoGenerationStatus }),

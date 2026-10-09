@@ -30,7 +30,7 @@ Script edits invalidate the current audio. Replaced or invalidated audio playbac
 
 Known limitations:
 
-- Script edits retain the current poster. After new audio generation, a video can reuse artwork made for an earlier script. A future change could flag potentially outdated artwork while preserving the paid asset.
+- Source edits retain the current poster and show a review notice. Export requires an explicit choice to reuse the artwork for the edited version, or a regenerated poster. The comparison tracks the original title, script, parameters, and mode; it ignores outer whitespace but conservatively flags other edits, including minor narration changes.
 - Caption controls remain editable during video export. Changing them aborts the current render without explaining the cancellation. Disable those controls during export or communicate the cancellation explicitly.
 
 Relevant code: [poster generation](../components/poster-generator.tsx), [video generation UI](../components/video-generator.tsx), and [video renderer](../lib/video-generator.ts).
