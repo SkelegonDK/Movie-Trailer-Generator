@@ -95,6 +95,10 @@ The production build checks TypeScript. Run the standalone type check after an i
 
 The app uses Next.js, React, TypeScript, Tailwind CSS, Radix UI, and Zustand. Bun is the package manager and test runner.
 
+## Optional private Cloudflare deployment
+
+Use the [Cloudflare deployment guide](documentation/cloudflare-deployment.md) for a plan-first setup script, authenticated Workers hosting and a durable private R2 archive. Deployment is explicit; the regular local Next.js workflow still works.
+
 ## Configuration and hosting
 
 See [environment setup](documentation/environment-setup.md) for provider configuration. No Python runtime, Ollama service, database, or authentication provider is required.
@@ -106,7 +110,3 @@ OpenRouter model IDs are configured in `lib/api-client.ts` and `app/api/`. Eleve
 ## License
 
 [MIT](LICENSE). The original public repository's license is retained.
-
-## Optional private Cloudflare deployment
-
-Use the [Cloudflare deployment guide](documentation/cloudflare-deployment.md) for a plan-first setup script, authenticated Workers hosting and a durable private R2 archive. Deployment is explicit; the regular local Next.js workflow still works.

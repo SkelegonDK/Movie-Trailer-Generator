@@ -12,6 +12,14 @@
 /build
 /dist
 
+# Cloudflare local state and generated deployment configuration
+/.wrangler/
+/.vinext/
+/.cloudflare/
+/.dev.vars*
+/.agents/
+/skills-lock.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -46,11 +54,3 @@ AGENTS.md
 
 # Share configuration names without committing credentials
 !.env.example
-
-# Cloudflare local state and generated deployment configuration
-/.wrangler/
-/.vinext/
-/.cloudflare/
-/.dev.vars*
-/.agents/
-/skills-lock.json
