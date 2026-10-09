@@ -45,7 +45,7 @@ Alternatively, save your own keys in Settings. They are encrypted at rest in thi
 
 ## Make a trailer
 
-The workflow runs on one page with sliding Idea, Script, Audio, Poster, and Video sections. Movie details and context stay visible beside the active section (above it on smaller screens). Use Back, Next, or the step tabs at any time. Successful generation advances automatically when you are still viewing that section.
+The workflow runs on one page with sliding Idea, Script, Audio, Poster, and Video sections. Movie details and context stay visible beside the active section (above it on smaller screens). On phones, the production details start collapsed to leave more room for the form; choose Details to expand them. The production status remains visible. Use Back, Next, or the step tabs at any time. Successful generation advances automatically when you are still viewing that section.
 
 1. Choose a parameter mode and fill in or randomize the movie elements.
 2. Generate a title and script, then edit the text as needed. To use your own script, open Script immediately and paste it into the editor; Audio unlocks once the text is nonempty.
