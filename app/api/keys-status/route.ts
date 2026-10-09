@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { validateSameOriginRequest } from "../_shared/request"
 
 export const dynamic = "force-dynamic"
 
@@ -8,9 +9,11 @@ interface KeyStatus {
   detail: string
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const rejected = validateSameOriginRequest(req)
+  if (rejected) return rejected
   const [openrouter, elevenlabs] = await Promise.all([checkOpenRouter(), checkElevenLabs()])
-  return NextResponse.json({ openrouter, elevenlabs })
+  return NextResponse.json({ openrouter, elevenlabs }, { headers: { "Cache-Control": "private, no-store" } })
 }
 
 async function checkOpenRouter(): Promise<KeyStatus> {
@@ -18,20 +21,19 @@ async function checkOpenRouter(): Promise<KeyStatus> {
   if (!key) return { present: false, valid: null, detail: "OPENROUTER_API not set in .env.local" }
   try {
     const res = await fetch("https://openrouter.ai/api/v1/key", {
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${key}` },
     })
     if (res.ok) {
-      const data = await res.json().catch(() => ({}))
-      const label = data?.data?.label
-      return { present: true, valid: true, detail: label ? `Key "${label}" accepted` : "Key accepted" }
+      return { present: true, valid: true, detail: "Key accepted" }
     }
     if (res.status === 401) return { present: true, valid: false, detail: "Rejected: invalid key" }
     return { present: true, valid: null, detail: `OpenRouter responded ${res.status}` }
-  } catch (error) {
+  } catch {
     return {
       present: true,
       valid: null,
-      detail: error instanceof Error ? error.message : "Validation request failed",
+      detail: "Validation request failed",
     }
   }
 }
@@ -41,20 +43,19 @@ async function checkElevenLabs(): Promise<KeyStatus> {
   if (!key) return { present: false, valid: null, detail: "ELEVENLABS_API not set in .env.local" }
   try {
     const res = await fetch("https://api.elevenlabs.io/v1/user", {
+      signal: AbortSignal.timeout(10_000),
       headers: { "xi-api-key": key },
     })
     if (res.ok) {
-      const data = await res.json().catch(() => ({}))
-      const tier = data?.subscription?.tier
-      return { present: true, valid: true, detail: tier ? `Key accepted (${tier} plan)` : "Key accepted" }
+      return { present: true, valid: true, detail: "Key accepted" }
     }
     if (res.status === 401) return { present: true, valid: false, detail: "Rejected: invalid key" }
     return { present: true, valid: null, detail: `ElevenLabs responded ${res.status}` }
-  } catch (error) {
+  } catch {
     return {
       present: true,
       valid: null,
-      detail: error instanceof Error ? error.message : "Validation request failed",
+      detail: "Validation request failed",
     }
   }
 }
