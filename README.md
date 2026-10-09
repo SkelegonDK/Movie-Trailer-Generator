@@ -51,7 +51,7 @@ The workflow runs on one page with sliding Idea, Script, Audio, Poster, and Vide
 2. Generate a title and script, then edit the text as needed.
 3. Generate the narration and music mix. Preview or download the audio.
 4. Generate the movie poster.
-5. Preview the video, adjust caption size, alignment, position, capitalization, and words per caption, then generate and download it.
+5. Preview the video, adjust caption size, alignment, position, capitalization, and words per caption, then generate and download it. If you changed the story, title, parameters, or mode after creating the poster, review the artwork and choose **Use existing artwork** or regenerate it in Poster. The comparison ignores outer whitespace but conservatively flags other edits, including minor narration changes.
 
 Video rendering happens in the browser in real time. Keep the tab open until export finishes. Captions are estimated from the script and audio duration rather than provider word timestamps.
 
