@@ -1,6 +1,6 @@
 # Bundled assets
 
-The repository's [MIT license](LICENSE) covers project code and original procedural music. Third-party assets retain their own licenses.
+The repository's [MIT license](LICENSE) covers original project code and procedural music. Third-party code and assets retain their own licenses.
 
 ## Frick font
 
@@ -19,6 +19,6 @@ Regenerate it with `python3 scripts/generate-trailer-music.py` (Python 3 and ffm
 ## Other third-party assets
 
 - Geist and Geist Mono are loaded by `next/font/google` from the [Geist font project](https://github.com/vercel/geist-font), licensed under SIL OFL 1.1. Their upstream license is included in [licenses/Geist-OFL.txt](licenses/Geist-OFL.txt).
-- PixelBlast includes its original [MIT notice](components/backgrounds/LICENSE.md).
+- PixelBlast retains its original [MIT + Commons Clause notice](components/backgrounds/LICENSE.md). That notice permits use within applications but restricts selling, sublicensing, or redistributing the components themselves; review the full notice before reusing the component.
 
 When replacing assets, record the source and license here and include any required notices. Generated user content remains subject to its provider terms and the user's input rights.
