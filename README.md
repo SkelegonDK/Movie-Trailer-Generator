@@ -53,7 +53,7 @@ The workflow runs on one page with sliding Idea, Script, Audio, Poster, and Vide
 4. Generate the movie poster.
 5. Preview the video, adjust caption size, alignment, position, capitalization, and words per caption, then generate and download it.
 
-Video rendering happens in the browser in real time. Keep the tab open until export finishes. Captions are estimated from the script and audio duration rather than provider word timestamps.
+Video rendering happens in the browser in real time. Keep the tab open until export finishes. Caption controls are locked during rendering to prevent edits from cancelling the export. Captions are estimated from the script and audio duration rather than provider word timestamps.
 
 Successful generations are saved automatically in the [Library](http://localhost:3000/library), including original video, audio and image files, scripts, and metadata. Search by title, script, or movie parameters; filter by content type; and open an item to review or download it. The Library reads files from the app server, so browsers using the same server see the same assets even after clearing browser storage. Downloads use permanent HTTP attachment links; video previews support byte ranges.
 
