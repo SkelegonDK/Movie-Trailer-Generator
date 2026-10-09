@@ -94,11 +94,13 @@ function InspectorRow({
 
 function IconButton({
   active,
+  disabled,
   onClick,
   label,
   children,
 }: {
   active: boolean
+  disabled: boolean
   onClick: () => void
   label: string
   children: React.ReactNode
@@ -106,10 +108,11 @@ function IconButton({
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors ${
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
       }`}
     >
@@ -383,7 +386,8 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
     )
   }
 
-  const canGenerate = !disabled && !isGeneratingVideo && videoGenerationStatus.status !== "generating"
+  const captionControlsDisabled = disabled || isGeneratingVideo || videoGenerationStatus.status === "generating"
+  const canGenerate = !captionControlsDisabled
 
   return (
     <div className="space-y-6">
@@ -432,6 +436,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
             <div className="rounded-lg border bg-muted/30 px-3">
               <InspectorRow label="Font size" value={captionStyle.fontSize.toFixed(1)}>
                 <Slider
+                  disabled={captionControlsDisabled}
                   value={[captionStyle.fontSize]}
                   min={FONT_SIZE_MIN}
                   max={FONT_SIZE_MAX}
@@ -448,6 +453,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
                   return (
                     <IconButton
                       key={align}
+                      disabled={captionControlsDisabled}
                       active={captionStyle.horizontalAlign === align}
                       label={`${align} alignment`}
                       onClick={() => setCaptionStyle({ ...captionStyle, horizontalAlign: align })}
@@ -464,6 +470,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
                   return (
                     <IconButton
                       key={preset.label}
+                      disabled={captionControlsDisabled}
                       active={Math.abs(captionStyle.verticalPosition - preset.position) < 0.5}
                       label={`${preset.label} vertical alignment`}
                       onClick={() => setCaptionStyle({ ...captionStyle, verticalPosition: preset.position })}
@@ -478,6 +485,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
                 <Label htmlFor="all-caps-captions" className="flex h-11 w-11 cursor-pointer items-center justify-center">
                   <Checkbox
                     id="all-caps-captions"
+                    disabled={captionControlsDisabled}
                     checked={captionStyle.allCaps}
                     onCheckedChange={(checked) => setCaptionStyle({ ...captionStyle, allCaps: checked === true })}
                     aria-label="All caps captions"
@@ -487,6 +495,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
 
               <InspectorRow label="Words per caption" value={String(captionStyle.maxWords)}>
                 <Slider
+                  disabled={captionControlsDisabled}
                   value={[captionStyle.maxWords]}
                   min={MAX_WORDS_MIN}
                   max={MAX_WORDS_MAX}
@@ -504,6 +513,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
 
               <InspectorRow label="X" value={`${Math.round(captionStyle.horizontalPosition)} %`}>
                 <Slider
+                  disabled={captionControlsDisabled}
                   value={[captionStyle.horizontalPosition]}
                   min={HORIZONTAL_POSITION_MIN}
                   max={HORIZONTAL_POSITION_MAX}
@@ -516,6 +526,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
 
               <InspectorRow label="Y" value={`${Math.round(captionStyle.verticalPosition)} %`}>
                 <Slider
+                  disabled={captionControlsDisabled}
                   value={[captionStyle.verticalPosition]}
                   min={VERTICAL_POSITION_MIN}
                   max={VERTICAL_POSITION_MAX}
@@ -544,7 +555,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
 
             {videoGenerationStatus.show && videoGenerationStatus.status === "generating" && (
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">{videoGenerationStatus.message}</p>
+                <p className="text-sm text-muted-foreground">{videoGenerationStatus.message} Caption settings are locked until rendering finishes.</p>
                 <div role="progressbar" aria-label="Video rendering progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(videoGenerationStatus.progress * 100)} className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full origin-left rounded-full bg-primary transition-transform"
