@@ -1,89 +1,50 @@
-# Architecture review — validated findings
+# Architecture notes
 
-Date: 2026-10-08. Two independent agents reviewed the report against the implementation and existing tests. The validated backlog is stored in the [Movie Trailer Generator Linear project](https://linear.app/manuel-thomsen/project/movie-trailer-generator-4dc92553eb24). Individual issue creation is blocked by the workspace's free-plan issue limit; these are ready-to-create issue descriptions.
+This document describes asset storage, generation ownership, and known implementation limitations. See the [project README](../README.md) for setup and usage.
 
-Linear document: [Validated architecture backlog and audio retention](https://linear.app/manuel-thomsen/document/validated-architecture-backlog-and-audio-retention-b191c680c858).
+## Asset storage
 
-Implementation validation: 117 tests pass, standalone TypeScript check and production build pass. A real browser test cleared IndexedDB, localStorage, and sessionStorage, reloaded Library, played the retained audio with its source metadata, and downloaded its WAV. The initial audio implementation was committed in `b432557`.
+Generated scripts, audio, posters, and videos are saved to the server's `.trailer-library/` directory, outside `.next` and `public`. The archive is ignored by Git. Each asset has an ID folder containing its original file and `metadata.json`.
 
-Backlog:
+All browsers using the same server share the archive. `TRAILER_LIBRARY_DIR` changes its root; `TRAILER_AUDIO_LIBRARY_DIR` provides a legacy override for the audio folder. Hosted instances require persistent storage and access control.
 
-- [ ] High / In review: durable trailer audio retention (implemented).
-- [ ] Medium / Explore: generation outcome ownership and poster provenance.
-- [ ] Medium / Fix: visible video cancellation during caption editing.
-- [ ] Low / Explore: audio engine readiness and ownership.
-- [ ] Medium / In review: audio retention consolidation and temporary URL cleanup (implemented).
+The Library migrates retained browser assets to the server archive when opened. Existing assets must be migrated from their original browser before its site data is cleared. Temporary object URLs alone cannot recover files after the original document closes.
 
-## Fix: retain generated trailer audio outside browser storage
+Archive behavior:
 
-Priority: High. Confirmed requirement; implemented in this change, pending review.
+- Saves preserve original media bytes and source metadata.
+- Retrying a save does not overwrite an existing asset's bytes.
+- Deletion markers prevent stale browser copies from restoring deleted assets.
+- Unavailable browser storage does not block server archive access.
+- Failed server saves preserve completed generation and attempt browser storage as a fallback. The UI warns users to download a copy.
+- Downloads use HTTP attachment links; video previews support byte ranges.
+- Uploads validate asset IDs, metadata, file signatures, size limits, and request origin.
 
-Audio already survives deleting localStorage alone: Library stores Blob bytes in IndexedDB. A full site-data purge or storage eviction can delete those bytes. Session history stores temporary object URLs and cannot recover them after document closure.
+Relevant code: [browser library](../lib/content-library.ts), [server archive](../lib/server/content-library.ts), [audio compatibility layer](../lib/server/audio-library.ts), and [Library UI](../components/content-library.tsx).
 
-Save generated WAV mixes and metadata on the server, outside `.next` and `public`, in a configurable persistent directory. Library must list and play these assets with empty or unavailable IndexedDB. Migrate retained browser audio before purge; retain legacy session import. Deletion must remove server copies and prevent stale browser migration from restoring them. Preserve playback and warn when a durable save fails. Hosted instances require a persistent volume and access control; browser clients share the server archive.
+## Generation ownership
 
-Acceptance:
+The [workflow page](../app/page.tsx) keeps its panels mounted, coordinates navigation, and disables source editing while generation is active. The [store](../lib/store.ts) manages script and audio generation, including locks against duplicate requests. Poster and video generation are managed by their respective components.
 
-- Generate/save audio, clear IndexedDB and session storage, reload Library, play/download identical WAV bytes and inspect source metadata.
-- Reopen the filesystem archive and recover records; test concurrent saves and idempotent retries.
-- Unavailable browser storage cannot block durable saves or reads.
-- Failed server saves preserve playback and show an accurate warning.
-- Migration is idempotent; server deletion cannot be undone by stale cached audio.
-- Reject invalid paths, malformed uploads, excessive sizes, and foreign origins.
+Script edits invalidate the current audio. Replaced or invalidated audio playback URLs are revoked; archived files remain available independently of those URLs. Video output is invalidated when its poster, audio, script, or caption style changes. Rendering supports cancellation and releases capture resources.
 
-Files: `lib/content-library.ts`, `lib/store.ts`, `lib/server/audio-library.ts`, `app/api/library/audio/`, `components/content-library.tsx`.
+Known limitations:
 
-## Explore: generation outcome ownership and source provenance
+- Script edits retain the current poster. After new audio generation, a video can reuse artwork made for an earlier script. A future change could flag potentially outdated artwork while preserving the paid asset.
+- Caption controls remain editable during video export. Changing them aborts the current render without explaining the cancellation. Disable those controls during export or communicate the cancellation explicitly.
 
-Priority: Medium. Original report strength: Strong. Validated strength: Worth exploring.
+Relevant code: [poster generation](../components/poster-generator.tsx), [video generation UI](../components/video-generator.tsx), and [video renderer](../lib/video-generator.ts).
 
-Generation lifecycle ownership is spread between the store, poster view, and video view. However, the root page already disables editing during generation and keeps workflow panels mounted; script/audio locks and video cancellation already exist. A broad normal-UI generation race was not demonstrated. Do not introduce a shared module solely by moving handlers.
+## Browser audio
 
-The reproduced freshness question is that script edits invalidate audio but retain a ready poster. After new audio generation, video can reuse artwork for the old script. Decide explicitly whether to retain with a stale indication or invalidate it; avoid silently discarding paid artwork without that decision.
+Audio generation and video preview share an `AudioContext` reference through the [audio engine](../lib/audio-engine.ts). Callers coordinate context setup and resume, decoding, music stretching, mixing, and export.
 
-Acceptance:
+The [time-stretching implementation](../lib/time-stretch.ts) adjusts background music length while preserving pitch. The generated mix is retained as WAV bytes rather than relying on a temporary playback URL. Legacy session history remains available for migration.
 
-- Document current input snapshots, completion, archiving, and invalidation ownership.
-- Decide poster reuse for materially changed stories versus minor narration edits.
-- Exercise retries, optional archive failure, source changes, and late completion through the generation interface.
-- Propose a deep module only if it absorbs demonstrated coordination and improves locality and leverage.
+Further work could consolidate context readiness and mixing into the audio engine. Closed-context recreation and rejected resume behavior need dedicated coverage before changing ownership.
 
-Files: `app/page.tsx:37`, `lib/store.ts:105`, `components/poster-generator.tsx:29`, `components/video-generator.tsx:227`.
+## Verification
 
-## Fix: communicate or prevent video cancellation during caption edits
+The [test suite](../tests/) covers archive persistence, concurrent saves, idempotent retries, browser-storage failures, migration, deletion, file validation, HTTP ranges, caption timing, audio stretching, and video resource cleanup. Provider requests are mocked; the suite does not validate live model access or paid generation.
 
-Priority: Medium. Confirmed narrow behavior from generation review.
-
-Caption controls ignore the view's disabled/generating state. Editing them during rendering triggers the source/style invalidation effect, silently aborting the render. Existing low-level abort cleanup works.
-
-Acceptance: either disable every caption control during export or communicate cancellation and its cause. Exercise each control, verify resource cleanup, and verify subsequent regeneration. This is separate from the speculative generation-module consolidation.
-
-Files: `components/video-generator.tsx` (caption controls and invalidation effect).
-
-## Explore: deepen browser audio engine ownership
-
-Priority: Low. Validated strength: Worth exploring.
-
-Three construction sites share one AudioContext ref; the report must not imply three simultaneous context allocations. The shallow audio-engine module exposes mutable ownership while callers coordinate context setup, resume, decoding, stretching, mixing, and export. Closed-context recreation and rejected resume behavior are not tested.
-
-Acceptance: evaluate a deeper audio-engine module that absorbs context readiness and narration-to-mix sequencing. Keep signal-processing implementation internal and preserve existing DSP tests. Test successful production, decode/music failure, resume failure, and a closed context through its interface before committing to a new seam.
-
-Files: `lib/audio-engine.ts`, `lib/store.ts`, `components/video-generator.tsx`, `lib/time-stretch.ts`, `lib/audio-utils.ts`.
-
-## Fix/explore: consolidate audio retention and playback URL ownership
-
-Priority: Medium. Dual retention is exploratory; missing audio URL cleanup is confirmed and addressed in this change.
-
-New audio previously wrote session metadata before IndexedDB archival, while session import later retried recovery. Audio object URLs were never revoked on invalidation, replacement, or history eviction. Library and video URLs already have cleanup.
-
-Acceptance: stop new session-history writes once durable audio is authoritative, retain migration for old entries, pass Blobs directly to retention, and release current audio URLs when replaced or invalidated. Verify durable assets remain readable after temporary URL release. Avoid a generic persistence module unless a concrete adapter variation justifies its seam.
-
-Files: `lib/store.ts`, `lib/audio-utils.ts`, `lib/content-library.ts`, `components/content-library.tsx`.
-
-## Follow-up: retain videos and images in the repo (2026-10-09)
-
-The user reported that videos were absent in Safari and difficult to download in T3. A regression test reproduced the browser isolation: a saved video disappeared with a fresh IndexedDB. A T3 Blob download did complete during diagnosis but went to T3’s managed downloads directory; a failed transfer was not reproduced.
-
-All generated assets now use the shared `.trailer-library/` repo archive, covered by `.gitignore`: `video/<id>/video.mp4` (or WebM), `poster/<id>/poster.<format>`, `audio/<id>/audio.wav`, and `script/<id>/script.txt`, with metadata beside each file. Existing audio and its legacy routes remain compatible. Library migrates retained browser assets on entry and reads the archive in every browser. HTTP attachment links replace temporary video download URLs; range requests support seeking. Disk failures preserve completed generation and browser fallbacks with accurate warnings. These follow-up changes remain uncommitted.
-
-Validation: 123 tests and the production build pass. In T3, a real MP4, PNG, WAV, and script seeded in the default profile were migrated to disk by Library. A separate incognito profile with zero IndexedDB entries displayed them, played the MP4, and loaded the PNG. Clicking the MP4 download produced 4,152 bytes with SHA-256 `e063a87b3a8912bac144d02cb71c094defc6303591cefbd7eba95bbc80058e04`, identical to disk and the original fixture. Test assets were removed afterward, preserving existing audio. Safari itself was not automated. Older assets must be migrated from their original browser before its data is purged.
+Run `bun test` and `bun run build` from the repository root. See the README for the standalone TypeScript check.
