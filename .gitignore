@@ -46,3 +46,6 @@ AGENTS.md
 
 # Share configuration names without committing credentials
 !.env.example
+
+# Locally bundled demo renderer
+/examples/demo/render.js
