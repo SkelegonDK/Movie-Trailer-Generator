@@ -38,6 +38,8 @@ Set the generated value through your host's secret manager or a protected enviro
 
 HTTP Basic credentials travel with requests, so expose this app only through HTTPS. Browsers may retain a Basic sign-in until closed; use separate browser profiles on shared computers and rotate the password to revoke existing credentials. Do not log Authorization headers. Development without a configured password is deliberately open for local use: bind it to `127.0.0.1`, not a public network interface. Production has no password-free bypass.
 
+Set `TRAILER_PUBLIC_ORIGIN` to the canonical public HTTPS origin (for example `https://studio.example.com`), without a path, query or fragment. It is required for hosted browser requests because Next may expose an internal localhost URL behind a reverse proxy. Origin validation uses this configured value and ignores caller-controlled Host and forwarding headers. For local production checks, a loopback HTTP origin such as `http://127.0.0.1:3000` is supported. Restart after changes. Missing or invalid production origin configuration rejects browser archive and generation requests safely.
+
 ### Shared studio permissions
 
 This is a small trusted studio, with one password and one archive. Every admitted user can invoke generation with the server keys, inspect key availability, read all generated assets, upload files, and delete them. It does not provide individual accounts, ownership boundaries, roles, or per-user quotas. Share the password only with people you trust with these permissions. For untrusted users, put a separate authorization and per-user accounting layer in front of the app before granting access.

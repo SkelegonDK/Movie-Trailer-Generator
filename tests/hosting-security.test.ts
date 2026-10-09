@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
+import { validateSameOriginRequest } from "../app/api/_shared/request"
 import { NextRequest } from "next/server"
 import { proxy } from "../proxy"
 import { createGenerationBudget } from "../lib/server/generation-budget"
@@ -12,6 +13,7 @@ import { GET as downloadContent, HEAD as headContent, DELETE as deleteContent } 
 import { GET as listAudio, POST as uploadAudio } from "../app/api/library/audio/route"
 import { GET as downloadAudio, DELETE as deleteAudio } from "../app/api/library/audio/[id]/route"
 
+const originalPublicOrigin = process.env.TRAILER_PUBLIC_ORIGIN
 const originalPassword = process.env.TRAILER_ACCESS_PASSWORD
 const originalNodeEnv = process.env.NODE_ENV
 const originalKey = process.env.OPENROUTER_API
@@ -20,7 +22,7 @@ const password = "a-long-studio-password-123456789"
 const authorization = `Basic ${Buffer.from(`studio:${password}`).toString("base64")}`
 beforeEach(() => { (process.env as Record<string, string | undefined>).NODE_ENV = "production"; process.env.TRAILER_ACCESS_PASSWORD = password })
 afterEach(() => {
-  for (const [name, value] of [["NODE_ENV", originalNodeEnv], ["TRAILER_ACCESS_PASSWORD", originalPassword], ["OPENROUTER_API", originalKey]]) {
+  for (const [name, value] of [["TRAILER_PUBLIC_ORIGIN", originalPublicOrigin], ["NODE_ENV", originalNodeEnv], ["TRAILER_ACCESS_PASSWORD", originalPassword], ["OPENROUTER_API", originalKey]]) {
     if (value === undefined) delete process.env[name!]; else process.env[name!] = value
   }
   globalThis.fetch = originalFetch
@@ -31,6 +33,23 @@ function req(path = "/", method = "GET", authenticated = false) {
 const context = { params: Promise.resolve({ id: "secret-file" }) }
 
 describe("hosted studio authorization", () => {
+  test("uses only a configured canonical public origin behind Next's internal URL", () => {
+    process.env.TRAILER_PUBLIC_ORIGIN = "https://studio.example"
+    const request = (origin: string, headers: Record<string, string> = {}) => new Request("https://localhost:4187/api/library/content/file", { method: "DELETE", headers: { authorization, origin, "Content-Type": "application/json", ...headers } })
+    expect(validateSameOriginRequest(request("https://studio.example"))).toBeNull()
+    expect(validateSameOriginRequest(request("https://studio.example", { host: "evil.example", "x-forwarded-host": "evil.example", "x-forwarded-proto": "http" }))).toBeNull()
+    expect(validateSameOriginRequest(request("https://evil.example", { host: "evil.example", "x-forwarded-host": "evil.example" }))?.status).toBe(403)
+    expect(validateSameOriginRequest(request("https://studio.example", { "sec-fetch-site": "cross-site" }))?.status).toBe(403)
+    delete process.env.TRAILER_PUBLIC_ORIGIN
+    expect(validateSameOriginRequest(request("https://studio.example"))?.status).toBe(503)
+    for (const invalid of ["https://studio.example/path", "https://user:password@studio.example", "http://studio.example", "https://studio.example?debug=1"]) {
+      process.env.TRAILER_PUBLIC_ORIGIN = invalid
+      expect(validateSameOriginRequest(request("https://studio.example"))?.status).toBe(503)
+    }
+    process.env.TRAILER_PUBLIC_ORIGIN = "http://127.0.0.1:4187"
+    expect(validateSameOriginRequest(request("http://127.0.0.1:4187"))).toBeNull()
+  })
+
   test("production fails closed without a strong configured password", () => {
     delete process.env.TRAILER_ACCESS_PASSWORD
     expect(requireStudioAccess(req())?.status).toBe(503)

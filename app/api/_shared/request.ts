@@ -9,10 +9,26 @@ export function validateSameOriginRequest(req: Request): Response | null {
   const access = requireStudioAccess(req)
   if (access) return access
   const origin = req.headers.get("origin")
-  if (
-    req.headers.get("sec-fetch-site") === "cross-site" ||
-    (origin !== null && origin !== new URL(req.url).origin)
-  ) {
+  if (req.headers.get("sec-fetch-site") === "cross-site") {
+    return requestError("Cross-origin requests are not allowed", 403)
+  }
+  // Next can expose an internal localhost URL behind a reverse proxy. Use a
+  // canonical configured origin, never caller-controlled forwarding headers.
+  const configuredOrigin = process.env.TRAILER_PUBLIC_ORIGIN?.trim()
+  let expectedOrigin = new URL(req.url).origin
+  if (configuredOrigin) {
+    try {
+      const url = new URL(configuredOrigin)
+      const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)
+      if ((url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) || url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new Error("Invalid origin")
+      expectedOrigin = url.origin
+    } catch {
+      return requestError("Studio public origin is not configured correctly", 503)
+    }
+  } else if (origin !== null && process.env.NODE_ENV === "production") {
+    return requestError("TRAILER_PUBLIC_ORIGIN is required for hosted browser requests", 503)
+  }
+  if (origin !== null && origin !== expectedOrigin) {
     return requestError("Cross-origin requests are not allowed", 403)
   }
   return null
