@@ -106,3 +106,7 @@ OpenRouter model IDs are configured in `lib/api-client.ts` and `app/api/`. Eleve
 ## License
 
 [MIT](LICENSE). The original public repository's license is retained.
+
+## Optional private Cloudflare deployment
+
+Use the [Cloudflare deployment guide](documentation/cloudflare-deployment.md) for a plan-first setup script, authenticated Workers hosting and a durable private R2 archive. Deployment is explicit; the regular local Next.js workflow still works.
