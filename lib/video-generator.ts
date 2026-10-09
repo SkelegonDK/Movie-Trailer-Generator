@@ -23,6 +23,8 @@ export interface RenderTrailerVideoOptions {
 }
 
 export interface RenderedVideo {
+  blob: Blob
+  downloadUrl?: string
   /** Blob URL of the rendered video. */
   url: string
   mimeType: string
@@ -160,6 +162,7 @@ export async function renderTrailerVideo(opts: RenderTrailerVideoOptions): Promi
 
     opts.signal?.throwIfAborted()
     return {
+      blob,
       url: URL.createObjectURL(blob),
       mimeType,
       extension: extensionFor(mimeType),

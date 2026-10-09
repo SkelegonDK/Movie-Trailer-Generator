@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { formatDuration } from "@/lib/audio-utils"
-import { deleteLibraryItem, getLibrarySnapshot, importBrowserAudio, importSessionAudio, LIBRARY_CHANGED_EVENT, type ContentType, type LibraryItem } from "@/lib/content-library"
+import { deleteLibraryItem, getLibrarySnapshot, importBrowserContent, importSessionAudio, LIBRARY_CHANGED_EVENT, type ContentType, type LibraryItem } from "@/lib/content-library"
 import { PARAMETER_MODES } from "@/lib/parameter-modes"
 import { cn } from "@/lib/utils"
 
@@ -30,12 +30,13 @@ function useMediaUrl(media?: Blob, savedUrl?: string) {
     setUrl(next)
     return () => URL.revokeObjectURL(next)
   }, [media])
-  return media ? url : savedUrl
+  return savedUrl ?? url
 }
 
 function LibraryDownload({ item, compact = false }: { item: LibraryItem; compact?: boolean }) {
   const [scriptFile] = useState(() => item.type === "script" ? new Blob([item.script], { type: "text/plain;charset=utf-8" }) : undefined)
-  const url = useMediaUrl(item.type === "script" ? scriptFile : item.media, item.mediaUrl)
+  const fallbackUrl = useMediaUrl(item.type === "script" ? scriptFile : item.media, item.mediaUrl)
+  const url = item.downloadUrl ?? fallbackUrl
   const title = item.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "untitled-trailer"
   if (!url) return <Button variant="ghost" disabled aria-label="Saved file unavailable"><Download /></Button>
   return (
@@ -58,7 +59,7 @@ function LibraryCard({ item, onReview, onDelete }: {
     <article className="group min-w-0 overflow-hidden rounded-lg border bg-card transition-colors hover:border-white/30">
       <button onClick={(event) => onReview(item, event.currentTarget)} aria-label={`Review ${item.title} ${contentTypes[item.type].singular.toLowerCase()}`} className="library-frame relative flex aspect-[16/10] w-full cursor-pointer items-center justify-center overflow-hidden border-b bg-[#101010] px-6 text-left">
         {item.type === "poster" && url ? (
-          // Saved browser files use object URLs rather than remotely optimized images.
+          // Local library files are served directly from the app server.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={`${item.title} poster`} className="h-full w-full object-contain" loading="lazy" />
         ) : item.type === "video" && url ? (
@@ -128,9 +129,9 @@ export function ContentLibrary() {
   const [items, setItems] = useState<LibraryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [audioArchiveAvailable, setAudioArchiveAvailable] = useState(true)
+  const [archiveAvailable, setArchiveAvailable] = useState(true)
   const [browserStorageAvailable, setBrowserStorageAvailable] = useState(true)
-  const [browserOnlyAudioCount, setBrowserOnlyAudioCount] = useState(0)
+  const [browserOnlyCount, setBrowserOnlyCount] = useState(0)
   const [reload, setReload] = useState(0)
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<ContentType | "all">("all")
@@ -151,9 +152,9 @@ export function ContentLibrary() {
       try {
         const saved = await getLibrarySnapshot()
         if (alive && current === revision) {
-          setItems(saved.items); setAudioArchiveAvailable(saved.audioArchiveAvailable)
+          setItems(saved.items); setArchiveAvailable(saved.archiveAvailable)
           setBrowserStorageAvailable(saved.browserStorageAvailable)
-          setBrowserOnlyAudioCount(saved.browserOnlyAudioCount); setError(false)
+          setBrowserOnlyCount(saved.browserOnlyCount); setError(false)
         }
       } catch {
         if (alive && current === revision) setError(true)
@@ -163,7 +164,7 @@ export function ContentLibrary() {
     }
     const initialize = async () => {
       try { await importSessionAudio() } catch { /* refresh reports storage errors */ }
-      try { await importBrowserAudio() } catch { /* refresh reports archive availability */ }
+      try { await importBrowserContent() } catch { /* refresh reports archive availability */ }
       if (alive) void refresh()
     }
     void initialize()
@@ -226,9 +227,9 @@ export function ContentLibrary() {
         </div>
       </section>
 
-      {!loading && !error && !audioArchiveAvailable && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">The server audio archive is unavailable. Showing browser copies only; reconnect to the server to see your backed-up audio.</p>}
-      {!loading && !error && audioArchiveAvailable && browserOnlyAudioCount > 0 && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">{browserOnlyAudioCount} {browserOnlyAudioCount === 1 ? "audio file is" : "audio files are"} only in this browser and could not be backed up. Download a copy before clearing browser data. Reopen Library to retry the backup.</p>}
-      {!loading && !error && !browserStorageAvailable && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">Browser storage is unavailable. Backed-up audio is still available; scripts, posters, and videos need browser storage.</p>}
+      {!loading && !error && !archiveAvailable && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">The server archive is unavailable. Showing browser copies only; reconnect to the server to see your saved files.</p>}
+      {!loading && !error && archiveAvailable && browserOnlyCount > 0 && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">{browserOnlyCount} {browserOnlyCount === 1 ? "file is" : "files are"} only in this browser and could not be backed up. Download a copy before clearing browser data. Reopen Library to retry the backup.</p>}
+      {!loading && !error && !browserStorageAvailable && <p role="alert" className="rounded-lg border p-4 text-sm text-muted-foreground">Browser storage is unavailable. Files saved on the server are still available.</p>}
 
       {loading ? <div className="flex min-h-64 items-center justify-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading your library…</div>
         : error ? <div role="alert" className="studio-panel space-y-4 rounded-lg border p-8"><h2 className="text-lg">Your library couldn't be opened.</h2><p className="text-sm text-muted-foreground">Check the server connection and allow browser storage, then try again.</p><Button variant="outline" onClick={() => { setLoading(true); setReload((value) => value + 1) }}>Try again</Button></div>
@@ -243,7 +244,7 @@ export function ContentLibrary() {
         : filtered.length === 0 ? <div className="studio-panel space-y-3 rounded-lg border px-6 py-16 text-center"><Search className="mx-auto mb-5 h-8 w-8 text-muted-foreground" /><h2 className="headline text-2xl">No matching content.</h2><p className="text-sm text-muted-foreground">Try another search or content type.</p><Button variant="outline" onClick={() => { setQuery(""); setFilter("all") }}>Clear filters</Button></div>
         : <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{filtered.map((item) => <LibraryCard key={item.id} item={item} onReview={(next, button) => { reviewButton.current = button; setSelected(next) }} onDelete={(next, button) => { deleteButton.current = button; setToDelete(next) }} />)}</div>}
 
-      <footer className="flex items-center gap-2 border-t pt-4 text-xs leading-relaxed text-muted-foreground"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground" />Backed-up audio survives clearing browser data. Scripts, posters, and videos are saved in this browser.</footer>
+      <footer className="flex items-center gap-2 border-t pt-4 text-xs leading-relaxed text-muted-foreground"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground" />Archived files are saved on this server and available across browsers, even after clearing browser data.</footer>
 
       <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null) }}>
         <DialogContent className="max-w-3xl" onCloseAutoFocus={(event) => { event.preventDefault(); reviewButton.current?.focus() }}>
@@ -252,7 +253,7 @@ export function ContentLibrary() {
       </Dialog>
       <AlertDialog open={!!toDelete} onOpenChange={(open) => { if (!open && !deleting) setToDelete(null) }}>
         <AlertDialogContent className="w-[calc(100vw-2rem)]" onCloseAutoFocus={(event) => { event.preventDefault(); if (deleteButton.current?.isConnected) deleteButton.current.focus(); else searchInput.current?.focus() }}>
-          <AlertDialogHeader><AlertDialogTitle>Remove from Library?</AlertDialogTitle><AlertDialogDescription className="[overflow-wrap:anywhere]">“{toDelete?.title}” will be removed {toDelete?.type === "audio" ? "from the server archive and this browser" : "from this browser"}. Download a copy first if you want to keep it.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Remove from Library?</AlertDialogTitle><AlertDialogDescription className="[overflow-wrap:anywhere]">“{toDelete?.title}” will be removed from the server archive and this browser. Download a copy first if you want to keep it.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel><Button variant="destructive" loading={deleting} onClick={remove}>Delete {toDelete?.type}</Button></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

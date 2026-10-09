@@ -11,6 +11,11 @@ const content = { type: "script" as const, title: "The Last Espresso", script: "
 
 beforeEach(() => {
   Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: new IDBFactory() })
+  spyOn(globalThis, "fetch").mockImplementation((async (_input: URL | RequestInfo, init?: RequestInit) => {
+    if (init?.method === "POST") return Response.json(JSON.parse((init.body as FormData).get("metadata") as string))
+    if (init?.method === "DELETE") return new Response(null, { status: 204 })
+    return Response.json({ items: [], deletedIds: [] })
+  }) as typeof globalThis.fetch)
 })
 
 afterEach(() => {
@@ -27,13 +32,17 @@ describe("content library", () => {
     const first = await saveLibraryItem({ ...content, createdAt: 1 })
     const second = await saveLibraryItem({ ...content, title: "The Sequel", createdAt: 2 })
     expect(first.id).not.toBe(second.id)
-    expect(await getLibraryItems()).toEqual([second, first])
+    expect((await getLibraryItems()).map((item) => item.id)).toEqual([second.id, first.id])
     expect(first.extension).toBe("txt")
   })
 
   test("stores video bytes independently of the generated object URL", async () => {
     const blob = new Blob(["saved video bytes"], { type: "video/webm" })
-    const fetch = spyOn(globalThis, "fetch").mockResolvedValue(new Response(blob))
+    const fetch = spyOn(globalThis, "fetch").mockImplementation((async (input: URL | RequestInfo, init?: RequestInit) => {
+      if (input === "blob:temporary") return new Response(blob)
+      if (init?.method === "POST") return Response.json(JSON.parse((init.body as FormData).get("metadata") as string))
+      return Response.json({ items: [], deletedIds: [] })
+    }) as typeof globalThis.fetch)
     await saveLibraryItem({ ...content, type: "video", url: "blob:temporary", extension: "webm", duration: 12 })
     expect(fetch).toHaveBeenCalledWith("blob:temporary")
     const [saved] = await getLibraryItems()
@@ -47,7 +56,7 @@ describe("content library", () => {
     const first = await saveLibraryItem(content)
     const second = await saveLibraryItem(content)
     await deleteLibraryItem(first.id)
-    expect(await getLibraryItems()).toEqual([second])
+    expect((await getLibraryItems()).map((item) => item.id)).toEqual([second.id])
   })
 
   test("does not create a media entry if fetching its file fails", async () => {
@@ -60,7 +69,7 @@ describe("content library", () => {
     const track = { id: "legacy-audio", title: content.title, script: content.script, parameters: content.parameters, duration: 10, timestamp: new Date(1).toISOString(), backgroundMusicId: "music", url: "blob:available" }
     Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: { getItem: () => JSON.stringify([track, { ...track, id: "expired", url: "blob:expired" }]) } })
     spyOn(globalThis, "fetch").mockImplementation((async (input: URL | RequestInfo, init?: RequestInit) => {
-      if (input === "/api/library/audio") {
+      if (input === "/api/library/content") {
         if (init?.method === "POST") return Response.json(JSON.parse((init.body as FormData).get("metadata") as string))
         return Response.json({ items: [], deletedIds: [] })
       }
@@ -88,6 +97,7 @@ describe("content library", () => {
   })
 
   test("unavailable library storage does not fail a completed generation", async () => {
+    spyOn(globalThis, "fetch").mockResolvedValue(new Response("Offline", { status: 503 }))
     Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: undefined })
     const client = new api.ApiClient("test-key", "")
     spyOn(api, "getApiClientAsync").mockResolvedValue(client)

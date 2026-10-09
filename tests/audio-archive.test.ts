@@ -4,14 +4,17 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { IDBFactory } from "fake-indexeddb"
 import { GET as list, POST as upload } from "../app/api/library/audio/route"
+import { GET as contentList, POST as contentUpload } from "../app/api/library/content/route"
+import { DELETE as contentRemove, GET as contentDownload } from "../app/api/library/content/[id]/route"
 import { DELETE as remove, GET as download } from "../app/api/library/audio/[id]/route"
 import { deleteAudioAsset, listAudioAssets, MAX_AUDIO_BYTES, saveAudioAsset } from "../lib/server/audio-library"
-import { archiveGeneratedContent, deleteLibraryItem, getLibrarySnapshot, importBrowserAudio, importSessionAudio, saveLibraryItem } from "../lib/content-library"
+import { archiveGeneratedContent, deleteLibraryItem, getLibrarySnapshot, importBrowserContent, importSessionAudio, saveLibraryItem } from "../lib/content-library"
 import { convertAudioBufferToWavArrayBuffer } from "../lib/audio-utils"
 import type { AudioAsset } from "../lib/audio-library-schema"
 import { useStore } from "../lib/store"
 import * as api from "../lib/api-client"
 
+const originalRoot = process.env.TRAILER_LIBRARY_DIR
 const originalDirectory = process.env.TRAILER_AUDIO_LIBRARY_DIR
 const originalDatabase = Object.getOwnPropertyDescriptor(globalThis, "indexedDB")
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage")
@@ -29,6 +32,7 @@ const wav = new Uint8Array(convertAudioBufferToWavArrayBuffer({
 beforeEach(async () => {
   originalState = useStore.getState()
   directory = await mkdtemp(path.join(tmpdir(), "trailer-audio-test-"))
+  process.env.TRAILER_LIBRARY_DIR = directory
   process.env.TRAILER_AUDIO_LIBRARY_DIR = path.join(directory, "audio")
   Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: new IDBFactory() })
 })
@@ -39,6 +43,8 @@ afterEach(async () => {
   useStore.setState(originalState, true)
   while (globalRestores.length) globalRestores.pop()!()
   mock.restore()
+  if (originalRoot === undefined) delete process.env.TRAILER_LIBRARY_DIR
+  else process.env.TRAILER_LIBRARY_DIR = originalRoot
   if (originalDirectory === undefined) delete process.env.TRAILER_AUDIO_LIBRARY_DIR
   else process.env.TRAILER_AUDIO_LIBRARY_DIR = originalDirectory
   if (originalDatabase) Object.defineProperty(globalThis, "indexedDB", originalDatabase)
@@ -69,8 +75,10 @@ function connectClientToRoutes() {
     if (String(input).startsWith("/assets/")) return new Response(wav)
     const req = new Request(new URL(String(input), "http://localhost:3000"), init)
     if (req.url.endsWith("/api/library/audio")) return req.method === "POST" ? upload(req) : list(req)
+    if (new URL(req.url).pathname === "/api/library/content") return req.method === "POST" ? contentUpload(req) : contentList(req)
     const id = decodeURIComponent(new URL(req.url).pathname.split("/").at(-1)!)
     const context = { params: Promise.resolve({ id }) }
+    if (new URL(req.url).pathname.startsWith("/api/library/content/")) return req.method === "DELETE" ? contentRemove(req, context) : contentDownload(req, context)
     return req.method === "DELETE" ? remove(req, context) : download(req, context)
   }) as typeof globalThis.fetch)
 }
@@ -138,7 +146,7 @@ describe("Library recovery from server audio", () => {
     Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: new IDBFactory() })
     Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: { getItem: () => null } })
     const snapshot = await getLibrarySnapshot()
-    expect(snapshot.items).toEqual([{ ...metadata, mediaUrl: `/api/library/audio/${metadata.id}` }])
+    expect(snapshot.items).toEqual([{ ...metadata, mediaUrl: `/api/library/content/${metadata.id}`, downloadUrl: `/api/library/content/${metadata.id}?download=1` }])
     const file = await fetch(snapshot.items[0].mediaUrl!)
     expect(new Uint8Array(await file.arrayBuffer())).toEqual(wav)
   })
@@ -157,7 +165,7 @@ describe("Library recovery from server audio", () => {
     spyOn(globalThis, "fetch").mockResolvedValue(new Response("Offline", { status: 503 }))
     expect(await archiveGeneratedContent({ ...metadata, media: new Blob([wav], { type: "audio/wav" }) })).toBe(false)
     const snapshot = await getLibrarySnapshot()
-    expect(snapshot.audioArchiveAvailable).toBe(false)
+    expect(snapshot.archiveAvailable).toBe(false)
     expect(await snapshot.items[0].media?.arrayBuffer()).toEqual(wav.buffer)
   })
 
@@ -167,10 +175,10 @@ describe("Library recovery from server audio", () => {
       return Response.json({ items: [], deletedIds: [] })
     }) as typeof globalThis.fetch)
     expect(await archiveGeneratedContent({ ...metadata, media: new Blob([wav], { type: "audio/wav" }) })).toBe(false)
-    await importBrowserAudio()
+    await importBrowserContent()
     const snapshot = await getLibrarySnapshot()
-    expect(snapshot.audioArchiveAvailable).toBe(true)
-    expect(snapshot.browserOnlyAudioCount).toBe(1)
+    expect(snapshot.archiveAvailable).toBe(true)
+    expect(snapshot.browserOnlyCount).toBe(1)
     expect(new Uint8Array(await snapshot.items[0].media!.arrayBuffer())).toEqual(wav)
   })
 
@@ -180,14 +188,14 @@ describe("Library recovery from server audio", () => {
     expect(await archiveGeneratedContent({ ...metadata, media: new Blob([wav], { type: "audio/wav" }) })).toBe(false)
     fetch.mockRestore()
     connectClientToRoutes()
-    await importBrowserAudio()
-    await importBrowserAudio()
+    await importBrowserContent()
+    await importBrowserContent()
     expect((await listAudioAssets()).items).toEqual([metadata])
     await deleteAudioAsset(metadata.id) // Another browser deletes it; this cache is stale.
     Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: { getItem: () => JSON.stringify([{
       ...metadata, timestamp: new Date(metadata.createdAt).toISOString(), url: "blob:legacy", backgroundMusicId: "music",
     }]) } })
-    await importBrowserAudio()
+    await importBrowserContent()
     await importSessionAudio()
     expect((await getLibrarySnapshot()).items).toEqual([])
     expect((await upload(uploadRequest())).status).toBe(410)
@@ -198,7 +206,7 @@ describe("Library recovery from server audio", () => {
     await saveLibraryItem({ ...metadata, media: new Blob([wav], { type: "audio/wav" }) })
     await deleteLibraryItem(metadata.id, "audio")
     expect((await getLibrarySnapshot()).items).toEqual([])
-    await importBrowserAudio()
+    await importBrowserContent()
     expect((await listAudioAssets()).items).toEqual([])
   })
 })

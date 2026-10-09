@@ -183,7 +183,7 @@ export const useStore = create<AppState>((set) => ({
       setCurrentScript(script);
 
       const saved = await archiveGeneratedContent({ type: "script", title: titleToUse, script, parameters, mode: state.mode });
-      if (!saved) toast({ title: "Script wasn't saved to Library", description: "Your script is ready here. Browser storage may be full or unavailable.", variant: "destructive" });
+      if (!saved) toast({ title: "Script wasn't saved to Library", description: "Your script is ready here, but could not be saved to disk. Copy it before leaving this page.", variant: "destructive" });
 
       toast({
         title: "Script ready",

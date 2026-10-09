@@ -4,7 +4,7 @@ Date: 2026-10-08. Two independent agents reviewed the report against the impleme
 
 Linear document: [Validated architecture backlog and audio retention](https://linear.app/manuel-thomsen/document/validated-architecture-backlog-and-audio-retention-b191c680c858).
 
-Implementation validation: 117 tests pass, standalone TypeScript check and production build pass. A real browser test cleared IndexedDB, localStorage, and sessionStorage, reloaded Library, played the retained audio with its source metadata, and downloaded its WAV. Changes are in the working tree, not committed or deployed.
+Implementation validation: 117 tests pass, standalone TypeScript check and production build pass. A real browser test cleared IndexedDB, localStorage, and sessionStorage, reloaded Library, played the retained audio with its source metadata, and downloaded its WAV. The initial audio implementation was committed in `b432557`.
 
 Backlog:
 
@@ -79,3 +79,11 @@ New audio previously wrote session metadata before IndexedDB archival, while ses
 Acceptance: stop new session-history writes once durable audio is authoritative, retain migration for old entries, pass Blobs directly to retention, and release current audio URLs when replaced or invalidated. Verify durable assets remain readable after temporary URL release. Avoid a generic persistence module unless a concrete adapter variation justifies its seam.
 
 Files: `lib/store.ts`, `lib/audio-utils.ts`, `lib/content-library.ts`, `components/content-library.tsx`.
+
+## Follow-up: retain videos and images in the repo (2026-10-09)
+
+The user reported that videos were absent in Safari and difficult to download in T3. A regression test reproduced the browser isolation: a saved video disappeared with a fresh IndexedDB. A T3 Blob download did complete during diagnosis but went to T3’s managed downloads directory; a failed transfer was not reproduced.
+
+All generated assets now use the shared `.trailer-library/` repo archive, covered by `.gitignore`: `video/<id>/video.mp4` (or WebM), `poster/<id>/poster.<format>`, `audio/<id>/audio.wav`, and `script/<id>/script.txt`, with metadata beside each file. Existing audio and its legacy routes remain compatible. Library migrates retained browser assets on entry and reads the archive in every browser. HTTP attachment links replace temporary video download URLs; range requests support seeking. Disk failures preserve completed generation and browser fallbacks with accurate warnings. These follow-up changes remain uncommitted.
+
+Validation: 123 tests and the production build pass. In T3, a real MP4, PNG, WAV, and script seeded in the default profile were migrated to disk by Library. A separate incognito profile with zero IndexedDB entries displayed them, played the MP4, and loaded the PNG. Clicking the MP4 download produced 4,152 bytes with SHA-256 `e063a87b3a8912bac144d02cb71c094defc6303591cefbd7eba95bbc80058e04`, identical to disk and the original fixture. Test assets were removed afterward, preserving existing audio. Safari itself was not automated. Older assets must be migrated from their original browser before its data is purged.

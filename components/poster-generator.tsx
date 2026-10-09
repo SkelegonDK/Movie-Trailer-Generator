@@ -89,7 +89,7 @@ export function PosterGenerator({ disabled = false, onGenerated }: { disabled?: 
       }
       setPosterUrl(imageResult.url)
       const saved = await archiveGeneratedContent({ type: "poster", title: movieTitle, script: currentScript, parameters, mode, url: imageResult.url })
-      if (!saved) toast({ title: "Poster wasn't saved to Library", description: "Your poster is ready here. Browser storage may be full or unavailable.", variant: "destructive" })
+      if (!saved) toast({ title: "Poster wasn't saved to Library", description: "Your poster is ready here, but could not be saved to disk. Download a copy before leaving this page.", variant: "destructive" })
       toast({
         title: "Poster Image Generated!",
         description: "Successfully generated the poster image.",

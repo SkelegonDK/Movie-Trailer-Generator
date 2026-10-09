@@ -25,7 +25,7 @@ import {
   ensureCaptionFont,
 } from "@/lib/video-renderer"
 import { renderTrailerVideo, type RenderedVideo } from "@/lib/video-generator"
-import { archiveGeneratedContent } from "@/lib/content-library"
+import { saveLibraryItem, type LibraryItem } from "@/lib/content-library"
 import {
   FONT_SIZE_MAX,
   FONT_SIZE_MIN,
@@ -321,16 +321,17 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
         URL.revokeObjectURL(video.url)
         return
       }
-      const saved = await archiveGeneratedContent({
+      let saved: LibraryItem | undefined
+      try { saved = await saveLibraryItem({
         type: "video", title: movieTitle, script: currentScript,
         parameters, mode,
-        url: video.url, extension: video.extension, duration: video.duration,
-      })
+        media: video.blob, extension: video.extension, duration: video.duration,
+      }) } catch { /* retain the completed video for an immediate download */ }
       if (controller.signal.aborted) {
         URL.revokeObjectURL(video.url)
         return
       }
-      setRenderedVideo(video)
+      setRenderedVideo({ ...video, downloadUrl: saved?.downloadUrl })
       if (!saved) toast({ title: "Video wasn't saved to Library", description: "Your video is ready here. Download it before leaving this page.", variant: "destructive" })
       setVideoGenerationStatus({
         show: true,
@@ -357,7 +358,7 @@ export function VideoGenerator({ active = true, disabled = false }: { active?: b
   const downloadVideo = () => {
     if (!renderedVideo) return
     const link = document.createElement("a")
-    link.href = renderedVideo.url
+    link.href = renderedVideo.downloadUrl ?? renderedVideo.url
     link.download = `${slugify(movieTitle)}_trailer.${renderedVideo.extension}`
     document.body.appendChild(link)
     link.click()
