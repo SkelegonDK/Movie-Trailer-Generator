@@ -84,7 +84,7 @@ Cloud limits deliberately differ from the local disk archive:
 
 - Maximum **10 MB per upload**, including video; metadata is limited to **32 KB** per asset.
 - At most **128 active assets** and **256 MB** total media. Delete assets to release quota.
-- At most **2,048 tombstones** per deployment. At that point new deletion IDs return 507; existing deletions can still be retried. Archive maintenance should be an explicit backup/migration, not automatic tombstone expiry.
+- At most **2,048 retained asset IDs** over the deployment’s lifetime, counting active assets, pending uploads and permanent tombstones. Each upload reserves its eventual deletion marker. At capacity, new asset IDs and deletion of unknown IDs return 507; existing assets can still be deleted and existing deletions retried. Deleting assets frees media and active-item quota but does not free this lifetime ID capacity. Archive maintenance should be an explicit backup/migration, not automatic tombstone expiry.
 - At most **two requests at once** to hosted generation endpoints, and **100 requests per UTC day** across the studio. Admissions are durable; rejected or failed generation requests still consume the daily budget. Interrupted concurrency leases expire after three minutes. Browser keys call providers directly and use the provider’s own limits; this budget covers server endpoints, not those direct browser calls.
 - Failed sign-ins are limited to **20 per minute per hashed IP**, with a bounded 512-IP authentication window. Cloudflare supplies the client IP; raw IPs are not stored.
 

@@ -8,7 +8,20 @@ const auth = `Basic ${Buffer.from(`studio:${password}`).toString("base64")}`
 const request = (pathname, options = {}) => fetch(base + pathname, { ...options, headers: { Authorization: auth, Origin: new URL(base).origin, ...options.headers } })
 assert.equal((await fetch(base + "/")).status, 401)
 assert.equal((await fetch(base + "/music/sample.wav")).status, 401)
-assert.equal((await request("/")).status, 200)
+const page = await request("/")
+assert.equal(page.status, 200)
+const buildAssets = [...new Set([...((await page.text()).matchAll(/(?:src|href)="(\/_next\/static\/[^"]+)"/g))].map(match => match[1]))]
+assert.ok(buildAssets.some(path => path.includes(".js")), "Homepage must reference hydration chunks")
+for (const path of [buildAssets.find(path => path.includes(".js")), buildAssets.find(path => path.includes(".css"))].filter(Boolean)) {
+  assert.equal((await fetch(base + path)).status, 401)
+}
+for (const path of buildAssets) {
+  const asset = await request(path)
+  assert.equal(asset.status, 200, `Missing build asset ${path}`)
+  assert.equal(asset.headers.get("cache-control"), "private, no-store")
+  assert.ok(!asset.headers.get("content-type")?.includes("text/html"))
+  assert.equal((await request(path, { method: "HEAD" })).status, 200)
+}
 const staticAsset = await request("/placeholder-logo.svg")
 assert.equal(staticAsset.status, 200); assert.equal(staticAsset.headers.get("cache-control"), "private, no-store")
 assert.equal((await request("/api/library/content", { headers: { Origin: "https://evil.example" } })).status, 403)
@@ -33,4 +46,4 @@ assert.equal((await request("/api/library/content", { method: "POST", body: form
 assert.ok((await (await request("/api/library/content")).json()).deletedIds.includes(id))
 const oversized = await request("/api/library/content", { method: "POST", body: new Uint8Array(10 * 1024 * 1024 + 65 * 1024), headers: { "Content-Type": "multipart/form-data; boundary=test" } })
 assert.equal(oversized.status, 413)
-console.log("Local Workers smoke passed: auth, cross-origin denial, durable archive, duplicate save, range/HEAD, tombstones, upload limit.")
+console.log("Local Workers smoke passed: auth, hydration assets, cross-origin denial, durable archive, duplicate save, range/HEAD, tombstones, upload limit.")

@@ -8,7 +8,7 @@ import type { CloudflareEnv } from "./types"
 export const UPLOAD_BYTES = 10 * 1024 * 1024
 export const ARCHIVE_BYTES = 256 * 1024 * 1024
 export const ARCHIVE_ITEMS = 128
-const MAX_TOMBSTONES = 2048
+const MAX_RETAINED_IDS = 2048
 const MIME = { txt: "text/plain;charset=utf-8", wav: "audio/wav", mp4: "video/mp4", webm: "video/webm", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", avif: "image/avif" }
 type Record = { item?: LibraryAsset; size: number; state: "pending" | "ready" | "deleted" }
 const key = (id: string) => `assets/${id}`
@@ -62,7 +62,8 @@ export class ArchiveCoordinator extends DurableObject<CloudflareEnv> {
     if (request.method === "DELETE") {
       if (request.headers.get("content-type")?.split(";")[0] !== "application/json") return error("Content-Type must be application/json", 415)
       if (audio && record?.item && record.item.type !== "audio") return error("Asset not found", 404)
-      if (!record && [...records.values()].filter(r => r.state === "deleted").length >= MAX_TOMBSTONES) return error("Archive tombstone limit reached", 507)
+      if ((!record && records.size >= MAX_RETAINED_IDS) ||
+          (record?.state !== "deleted" && [...records.values()].filter(r => r.state === "deleted").length >= MAX_RETAINED_IDS)) return error("Archive retained ID limit reached", 507)
       // Tombstone is committed first: failed deletion never makes a file visible again.
       await this.ctx.storage.put(`item:${id}`, { ...record, size: record?.size || 0, state: "deleted" })
       await this.env.ARCHIVE_BUCKET.delete(key(id))
@@ -104,6 +105,9 @@ export class ArchiveCoordinator extends DurableObject<CloudflareEnv> {
     const existing = records.get(`item:${item.id}`)
     if (existing?.state === "deleted") return error("This asset was deleted", 410)
     if (existing?.state === "ready") return Response.json(existing.item, { status: 201 })
+    // Reserve permanent ID capacity now, so every admitted asset can be deleted
+    // later without growing tombstone storage beyond the lifetime bound.
+    if (!existing && records.size >= MAX_RETAINED_IDS) return error("Cloud archive retained ID limit reached", 507)
     if (existing && JSON.stringify(existing.item) !== JSON.stringify(item)) return error("Asset ID is already reserved", 409)
     const usedBytes = [...records.values()].reduce((total, r) => total + r.size, 0)
     const active = [...records.values()].filter(r => r.state !== "deleted").length

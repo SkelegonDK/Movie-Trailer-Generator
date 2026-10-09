@@ -49,6 +49,12 @@ export default {
       try { return privateResponse(await app.fetch(request, env as never, ctx)) }
       finally { await archive.fetch(new Request(`https://internal/generation/${token}`, { method: "DELETE" }) as never) }
     }
+    // run_worker_first sends build assets here too. Serve the ASSETS binding
+    // only after authentication; vinext's router cannot load these chunks.
+    if (["GET", "HEAD"].includes(request.method) && !pathname.startsWith("/api/")) {
+      const asset = await env.ASSETS.fetch(request as never) as unknown as Response
+      if (asset.status !== 404) return privateResponse(asset)
+    }
     return privateResponse(await app.fetch(request, env as never, ctx))
   },
 }
