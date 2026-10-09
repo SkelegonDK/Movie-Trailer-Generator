@@ -39,7 +39,7 @@ export default function GeneratorPage() {
   const nextStep = steps[index + 1]?.id
   const canAdvance = !!nextStep && access[nextStep] && !busy
   const missingAssetMessage = !currentScript.trim()
-    ? "Generate a script to continue."
+    ? "Generate or paste a script to continue."
     : !trailerAudioBuffer
       ? "Generate trailer audio to continue."
       : "Generate a poster to continue."

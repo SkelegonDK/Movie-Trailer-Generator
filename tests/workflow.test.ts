@@ -4,9 +4,9 @@ import { getWorkflowAccess } from "../lib/workflow"
 const empty = { currentScript: "", trailerAudioBuffer: null, posterUrl: null, posterStatus: "idle" as const }
 
 describe("workflow asset requirements", () => {
-  it("blocks every later stage until a script exists", () => {
-    expect(getWorkflowAccess(empty)).toEqual({ idea: true, script: false, audio: false, poster: false, video: false })
-    expect(getWorkflowAccess({ ...empty, currentScript: "  " }).audio).toBe(false)
+  it("allows an empty Script editor while keeping generation stages locked", () => {
+    expect(getWorkflowAccess(empty)).toEqual({ idea: true, script: true, audio: false, poster: false, video: false })
+    expect(getWorkflowAccess({ ...empty, currentScript: "  " })).toEqual({ idea: true, script: true, audio: false, poster: false, video: false })
   })
 
   it("unlocks stages only as all prerequisites become available", () => {

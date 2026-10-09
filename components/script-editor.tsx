@@ -14,7 +14,7 @@ export function ScriptEditor({ disabled = false }: { disabled?: boolean }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Trailer script</CardTitle>
-          <p className="text-sm leading-relaxed text-muted-foreground">Fine-tune the drama, then choose Next to create your narration and music.</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">Paste your own script or fine-tune the drama, then choose Next to create your narration and music.</p>
         </CardHeader>
         <CardContent>
           <Textarea

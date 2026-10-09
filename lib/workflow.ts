@@ -13,7 +13,7 @@ export function getWorkflowAccess(assets: WorkflowAssets): Record<WorkflowStep, 
   const audioReady = scriptReady && !!assets.trailerAudioBuffer
   return {
     idea: true,
-    script: scriptReady,
+    script: true,
     audio: scriptReady,
     poster: audioReady,
     video: audioReady && !!assets.posterUrl && assets.posterStatus === "ready",
