@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "trailer-studio-local",
+  "main": "cloudflare/worker.ts",
+  "compatibility_date": "2026-10-09",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "none",
+    "run_worker_first": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "ARCHIVE_BUCKET",
+      "bucket_name": "trailer-studio-local-archive"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ARCHIVE",
+        "class_name": "ArchiveCoordinator"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ArchiveCoordinator"
+      ]
+    }
+  ],
+  "vars": {
+    "TRAILER_PUBLIC_ORIGIN": "http://127.0.0.1:4178"
+  }
+}
