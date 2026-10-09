@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Render an original procedural trailer cue. Requires Python 3 and ffmpeg.
 
-No recordings or third-party samples are used. Source and output use the
-repository's MIT license. Output is deterministic and stripped of metadata.
+No recordings or third-party samples are used. Source uses the repository's
+MIT license; the generated cue is dedicated to the public domain under CC0
+(see licenses/trailer-music-CC0.txt). Output is deterministic and stripped of metadata.
 """
 import array
 import math
