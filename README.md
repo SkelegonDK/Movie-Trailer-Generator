@@ -105,4 +105,4 @@ OpenRouter model IDs are configured in `lib/api-client.ts` and `app/api/`. Eleve
 
 ## License
 
-[MIT](LICENSE). The original public repository's license is retained.
+[MIT](LICENSE). The original public repository's license is retained. Bundled fonts and music are documented in [asset licenses](ASSET-LICENSES.md).
