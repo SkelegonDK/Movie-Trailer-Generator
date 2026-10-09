@@ -99,7 +99,9 @@ The app uses Next.js, React, TypeScript, Tailwind CSS, Radix UI, and Zustand. Bu
 
 See [environment setup](documentation/environment-setup.md) for provider configuration. No Python runtime, Ollama service, database, or authentication provider is required.
 
-This release is intended for local or access-controlled use. Generation routes have no authentication or rate limiting; anyone who can access a hosted instance can make requests using its server API keys. Provider usage may incur charges. A deployment needs a Next.js server runtime, not a static-only host.
+Hosted production requires `TRAILER_PUBLIC_ORIGIN` (the canonical HTTPS origin, such as `https://studio.example.com`) and `TRAILER_ACCESS_PASSWORD`, a random password of at least 20 characters. The browser asks for username `studio` and this password. Without a valid configuration, production fails closed. Everyone with this password can spend server provider credits and read, add, or delete the same shared archive. Use HTTPS and share access only with trusted collaborators. Local development without the password remains open; bind it to loopback and do not expose a development server publicly.
+
+Server generation has a process-local limit of 30 accepted requests per 15 minutes, at most two concurrent calls, and a 90-second provider timeout. The shared disk archive is capped at 2 GiB and 1,000 retained IDs, including deletion markers. These are safeguards for a small studio, not a distributed quota or provider billing cap. Set spending limits with your providers. See the [hosting model and operational limits](documentation/environment-setup.md#hosting) before deploying. A deployment needs a Next.js server runtime and persistent storage, not a static-only host.
 
 OpenRouter model IDs are configured in `lib/api-client.ts` and `app/api/`. ElevenLabs voice and model settings are shared in `lib/elevenlabs-config.ts`. Availability depends on your provider account. Automated tests mock provider calls and do not validate live generation.
 
