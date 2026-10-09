@@ -2,6 +2,12 @@
 
 Turn an absurd movie idea into a trailer with an AI-written title and script, a cinematic poster, a voiceover, background music, and a downloadable video.
 
+![Trailer studio with a sample movie idea](examples/demo/studio.png)
+
+**See the output:** [watch the 12-second sample trailer](examples/demo/the-last-espresso.mp4), [view its poster](examples/demo/poster.svg), or [read its script](examples/demo/script.txt).
+
+The sample uses an original illustrated poster, captions, and procedural music rendered with this app’s video renderer. It has no voiceover and makes no AI-provider calls; live generation adds OpenRouter artwork and ElevenLabs narration. See [demo instructions](examples/demo/README.md) to reproduce it without API keys.
+
 This is the Next.js replacement for the original Python/Streamlit app. The old codebase is preserved on [`archive/streamlit`](https://github.com/SkelegonDK/Movie-Trailer-Generator/tree/archive/streamlit) and the [`legacy-streamlit`](https://github.com/SkelegonDK/Movie-Trailer-Generator/tree/legacy-streamlit) tag. Existing Python environments and Streamlit configuration do not apply to this version.
 
 ## Features
